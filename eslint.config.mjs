@@ -11,6 +11,33 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("eslint-config-prettier"),
+  ...compat.extends("plugin:jsx-a11y/recommended"),
+  {
+    plugins: {
+      import: (await import("eslint-plugin-import")).default,
+    },
+    rules: {
+      "import/order": [
+        "error",
+        {
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+          ],
+          "newlines-between": "always",
+          alphabetize: {
+            order: "asc",
+            caseInsensitive: true,
+          },
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;
