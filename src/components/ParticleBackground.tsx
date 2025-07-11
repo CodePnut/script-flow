@@ -7,14 +7,41 @@ import { useTheme } from './ThemeProvider'
 export function ParticleBackground() {
   const { resolvedTheme } = useTheme()
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  const [particles, setParticles] = useState<
+    Array<{
+      id: number
+      width: number
+      height: number
+      left: number
+      top: number
+      animationDelay: number
+      animationDuration: number
+    }>
+  >([])
 
-  // Check for reduced motion preference
+  // Check for reduced motion preference and generate particles
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     setPrefersReducedMotion(mediaQuery.matches)
 
     const handleChange = () => setPrefersReducedMotion(mediaQuery.matches)
     mediaQuery.addEventListener('change', handleChange)
+
+    // Generate particles client-side only to avoid hydration mismatch
+    setIsMounted(true)
+    setParticles(
+      Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        width: Math.random() * 4 + 2,
+        height: Math.random() * 4 + 2,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        animationDelay: Math.random() * 2,
+        animationDuration: Math.random() * 3 + 2,
+      })),
+    )
+
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
@@ -48,22 +75,23 @@ export function ParticleBackground() {
 
       {/* Floating particles with CSS animation */}
       <div className="relative h-full w-full">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className={`absolute rounded-full animate-pulse ${
-              resolvedTheme === 'dark' ? 'bg-white/10' : 'bg-black/5'
-            }`}
-            style={{
-              width: Math.random() * 4 + 2 + 'px',
-              height: Math.random() * 4 + 2 + 'px',
-              left: Math.random() * 100 + '%',
-              top: Math.random() * 100 + '%',
-              animationDelay: Math.random() * 2 + 's',
-              animationDuration: Math.random() * 3 + 2 + 's',
-            }}
-          />
-        ))}
+        {isMounted &&
+          particles.map((particle) => (
+            <div
+              key={particle.id}
+              className={`absolute rounded-full animate-pulse ${
+                resolvedTheme === 'dark' ? 'bg-white/10' : 'bg-black/5'
+              }`}
+              style={{
+                width: `${particle.width}px`,
+                height: `${particle.height}px`,
+                left: `${particle.left}%`,
+                top: `${particle.top}%`,
+                animationDelay: `${particle.animationDelay}s`,
+                animationDuration: `${particle.animationDuration}s`,
+              }}
+            />
+          ))}
       </div>
     </div>
   )
