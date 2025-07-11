@@ -64,8 +64,8 @@ export function ParticleBackground() {
         style={{
           background:
             resolvedTheme === 'dark'
-              ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 50%, rgba(34, 197, 94, 0.05) 100%)'
-              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(147, 51, 234, 0.03) 50%, rgba(34, 197, 94, 0.03) 100%)',
+              ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 51, 234, 0.08) 50%, rgba(34, 197, 94, 0.08) 100%)'
+              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(147, 51, 234, 0.12) 50%, rgba(34, 197, 94, 0.12) 100%)',
         }}
       />
     )
@@ -80,8 +80,8 @@ export function ParticleBackground() {
         style={{
           background:
             resolvedTheme === 'dark'
-              ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 51, 234, 0.08) 50%, rgba(34, 197, 94, 0.08) 100%)'
-              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(147, 51, 234, 0.04) 50%, rgba(34, 197, 94, 0.04) 100%)',
+              ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(147, 51, 234, 0.12) 50%, rgba(34, 197, 94, 0.12) 100%)'
+              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 50%, rgba(34, 197, 94, 0.15) 100%)',
         }}
       />
 
@@ -94,8 +94,8 @@ export function ParticleBackground() {
               key={shape.id}
               className={`absolute geometric-shape-${shape.id} ${
                 resolvedTheme === 'dark'
-                  ? 'bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-green-400/20'
-                  : 'bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-green-500/10'
+                  ? 'bg-gradient-to-br from-blue-400/30 via-purple-400/30 to-green-400/30'
+                  : 'bg-gradient-to-br from-blue-700/40 via-purple-700/40 to-green-700/40'
               }`}
               style={{
                 width: `${shape.size}px`,
@@ -130,14 +130,14 @@ export function ParticleBackground() {
           background:
             resolvedTheme === 'dark'
               ? `
-                radial-gradient(600px circle at 20% 20%, rgba(59, 130, 246, 0.15), transparent 40%),
-                radial-gradient(800px circle at 80% 80%, rgba(147, 51, 234, 0.15), transparent 40%),
-                radial-gradient(400px circle at 60% 40%, rgba(34, 197, 94, 0.1), transparent 40%)
+                radial-gradient(600px circle at 20% 20%, rgba(59, 130, 246, 0.2), transparent 40%),
+                radial-gradient(800px circle at 80% 80%, rgba(147, 51, 234, 0.2), transparent 40%),
+                radial-gradient(400px circle at 60% 40%, rgba(34, 197, 94, 0.15), transparent 40%)
               `
               : `
-                radial-gradient(600px circle at 20% 20%, rgba(59, 130, 246, 0.08), transparent 40%),
-                radial-gradient(800px circle at 80% 80%, rgba(147, 51, 234, 0.08), transparent 40%),
-                radial-gradient(400px circle at 60% 40%, rgba(34, 197, 94, 0.05), transparent 40%)
+                radial-gradient(600px circle at 20% 20%, rgba(59, 130, 246, 0.18), transparent 40%),
+                radial-gradient(800px circle at 80% 80%, rgba(147, 51, 234, 0.18), transparent 40%),
+                radial-gradient(400px circle at 60% 40%, rgba(34, 197, 94, 0.12), transparent 40%)
               `,
         }}
       />

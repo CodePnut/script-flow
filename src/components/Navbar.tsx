@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { Button } from './ui/button'
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from './ui/sheet'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -22,8 +22,8 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-bg/95 backdrop-blur supports-[backdrop-filter]:bg-bg/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         {/* Logo */}
-        <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+        <div className="mr-6 hidden md:flex">
+          <Link href="/" className="mr-8 flex items-center space-x-2">
             <div className="h-6 w-6 rounded-md bg-primary" />
             <span className="hidden font-bold sm:inline-block">ScriptFlow</span>
           </Link>
@@ -52,6 +52,7 @@ export function Navbar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
+            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
             <div className="px-7">
               <Link
                 href="/"
@@ -67,7 +68,7 @@ export function Navbar() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent_fg focus:bg-accent focus:text-accent_fg"
+                    className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-fg focus:bg-accent focus:text-accent-fg"
                   >
                     {item.name}
                   </Link>
@@ -78,9 +79,12 @@ export function Navbar() {
         </Sheet>
 
         {/* Mobile logo */}
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+        <div className="flex flex-1 items-center justify-between space-x-4 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
-            <Link href="/" className="flex items-center space-x-2 md:hidden">
+            <Link
+              href="/"
+              className="flex items-center space-x-2 md:hidden ml-2"
+            >
               <div className="h-6 w-6 rounded-md bg-primary" />
               <span className="font-bold">ScriptFlow</span>
             </Link>

@@ -9,27 +9,8 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        bg: 'var(--color-bg)',
-        fg: 'var(--color-fg)',
-        accent: 'var(--color-accent)',
-        accent_fg: 'var(--color-accent-fg)',
-        muted: 'var(--color-muted)',
-        muted_fg: 'var(--color-muted-fg)',
-        border: 'var(--color-border)',
-        input: 'var(--color-input)',
-        ring: 'var(--color-ring)',
-        primary: 'var(--color-primary)',
-        primary_fg: 'var(--color-primary-fg)',
-        secondary: 'var(--color-secondary)',
-        secondary_fg: 'var(--color-secondary-fg)',
-        destructive: 'var(--color-destructive)',
-        destructive_fg: 'var(--color-destructive-fg)',
-        card: 'var(--color-card)',
-        card_fg: 'var(--color-card-fg)',
-        popover: 'var(--color-popover)',
-        popover_fg: 'var(--color-popover-fg)',
-      },
+      // Colors are now defined in CSS using @theme directive
+      // No need to duplicate them here
       animation: {
         'fade-in': 'fade-in 0.5s ease-in-out',
         'slide-down': 'slide-down 0.2s ease-out',
