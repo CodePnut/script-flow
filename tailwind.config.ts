@@ -9,8 +9,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Colors are now defined in CSS using @theme directive
-      // No need to duplicate them here
+      colors: {
+        // Standardized particle system colors
+        'particle-blue': 'rgb(59 130 246 / <alpha-value>)',
+        'particle-purple': 'rgb(147 51 234 / <alpha-value>)',
+        'particle-green': 'rgb(34 197 94 / <alpha-value>)',
+        'particle-violet': 'rgb(168 85 247 / <alpha-value>)',
+        'particle-pink': 'rgb(236 72 153 / <alpha-value>)',
+      },
       animation: {
         'fade-in': 'fade-in 0.5s ease-in-out',
         'slide-down': 'slide-down 0.2s ease-out',

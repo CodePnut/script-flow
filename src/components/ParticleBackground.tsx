@@ -102,6 +102,8 @@ export function ParticleBackground() {
   }, [])
 
   // Accessibility: Static background for users who prefer reduced motion
+  // Note: Using hardcoded rgba values in inline styles for maximum browser compatibility
+  // while maintaining standardized colors in Tailwind utilities
   if (prefersReducedMotion) {
     return (
       <div
@@ -154,7 +156,7 @@ export function ParticleBackground() {
               className={`absolute geometric-shape-${shape.id} ${
                 resolvedTheme === 'dark'
                   ? 'bg-gradient-to-br from-blue-400/30 via-purple-400/30 to-green-400/30'
-                  : 'bg-gradient-to-br from-blue-700/40 via-purple-700/40 to-green-700/40'
+                  : 'bg-gradient-to-br from-blue-600/40 via-purple-600/40 to-green-600/40'
               }`}
               style={{
                 // Shape dimensions and positioning

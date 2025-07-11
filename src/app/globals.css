@@ -25,27 +25,34 @@
 
 /* shadcn/ui CSS variables */
 :root {
-  /* Light theme with better contrast */
-  --background: 0 0% 98%;
-  --foreground: 0 0% 5%;
+  /* Light theme with enhanced contrast */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 5%;
+  --card-foreground: 0 0% 3%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 5%;
+  --popover-foreground: 0 0% 3%;
   --primary: 221 83% 53%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 94%;
-  --secondary-foreground: 0 0% 15%;
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 40%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 35%;
   --accent: 221 83% 53%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 85%;
-  --input: 0 0% 90%;
+  --border: 0 0% 88%;
+  --input: 0 0% 94%;
   --ring: 221 83% 53%;
   --radius: 0.5rem;
+
+  /* Particle system standardized colors */
+  --particle-blue: 59 130 246;
+  --particle-purple: 147 51 234;
+  --particle-green: 34 197 94;
+  --particle-violet: 168 85 247;
+  --particle-pink: 236 72 153;
 }
 
 .dark {
@@ -69,6 +76,13 @@
   --border: 0 0% 18%;
   --input: 0 0% 18%;
   --ring: 221 83% 53%;
+
+  /* Particle system standardized colors (same as light for consistency) */
+  --particle-blue: 59 130 246;
+  --particle-purple: 147 51 234;
+  --particle-green: 34 197 94;
+  --particle-violet: 168 85 247;
+  --particle-pink: 236 72 153;
 }
 
 /* Modern geometric background animations */
