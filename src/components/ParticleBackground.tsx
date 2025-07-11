@@ -117,10 +117,10 @@ export function ParticleBackground() {
                 radial-gradient(circle at 75% 75%, rgba(147, 51, 234, 0.05) 0%, transparent 50%)
               `
               : `
-                linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(147, 51, 234, 0.12) 50%, rgba(34, 197, 94, 0.12) 100%),
-                linear-gradient(45deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%),
-                radial-gradient(circle at 30% 40%, rgba(59, 130, 246, 0.06) 0%, transparent 60%),
-                radial-gradient(circle at 70% 60%, rgba(34, 197, 94, 0.06) 0%, transparent 60%)
+                linear-gradient(135deg, rgba(29, 78, 216, 0.16) 0%, rgba(126, 34, 206, 0.16) 50%, rgba(22, 163, 74, 0.16) 100%),
+                linear-gradient(45deg, rgba(147, 51, 234, 0.12) 0%, rgba(219, 39, 119, 0.12) 100%),
+                radial-gradient(circle at 30% 40%, rgba(37, 99, 235, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 70% 60%, rgba(5, 150, 105, 0.1) 0%, transparent 60%)
               `,
         }}
       />
@@ -138,9 +138,9 @@ export function ParticleBackground() {
             resolvedTheme === 'dark'
               ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(147, 51, 234, 0.12) 50%, rgba(34, 197, 94, 0.12) 100%)'
               : `
-                linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 50%, rgba(34, 197, 94, 0.15) 100%),
-                linear-gradient(45deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%),
-                linear-gradient(225deg, rgba(34, 197, 94, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)
+                linear-gradient(135deg, rgba(29, 78, 216, 0.2) 0%, rgba(126, 34, 206, 0.2) 50%, rgba(22, 163, 74, 0.2) 100%),
+                linear-gradient(45deg, rgba(147, 51, 234, 0.15) 0%, rgba(219, 39, 119, 0.15) 100%),
+                linear-gradient(225deg, rgba(5, 150, 105, 0.12) 0%, rgba(37, 99, 235, 0.12) 100%)
               `,
         }}
       />
@@ -156,7 +156,7 @@ export function ParticleBackground() {
               className={`absolute geometric-shape-${shape.id} ${
                 resolvedTheme === 'dark'
                   ? 'bg-gradient-to-br from-blue-400/30 via-purple-400/30 to-green-400/30'
-                  : 'bg-gradient-to-br from-blue-600/40 via-purple-600/40 to-green-600/40'
+                  : 'bg-gradient-to-br from-blue-700/50 via-purple-700/50 to-emerald-600/50'
               }`}
               style={{
                 // Shape dimensions and positioning
@@ -200,11 +200,11 @@ export function ParticleBackground() {
                 radial-gradient(400px circle at 60% 40%, rgba(34, 197, 94, 0.15), transparent 40%)
               `
               : `
-                radial-gradient(600px circle at 20% 20%, rgba(59, 130, 246, 0.18), transparent 40%),
-                radial-gradient(800px circle at 80% 80%, rgba(147, 51, 234, 0.18), transparent 40%),
-                radial-gradient(400px circle at 60% 40%, rgba(34, 197, 94, 0.12), transparent 40%),
-                radial-gradient(500px circle at 10% 90%, rgba(168, 85, 247, 0.1), transparent 50%),
-                radial-gradient(700px circle at 90% 10%, rgba(236, 72, 153, 0.08), transparent 50%)
+                radial-gradient(600px circle at 20% 20%, rgba(29, 78, 216, 0.22), transparent 40%),
+                radial-gradient(800px circle at 80% 80%, rgba(126, 34, 206, 0.22), transparent 40%),
+                radial-gradient(400px circle at 60% 40%, rgba(22, 163, 74, 0.16), transparent 40%),
+                radial-gradient(500px circle at 10% 90%, rgba(147, 51, 234, 0.14), transparent 50%),
+                radial-gradient(700px circle at 90% 10%, rgba(219, 39, 119, 0.12), transparent 50%)
               `,
         }}
       />
