@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
 import { Navbar } from '@/components/Navbar'
+import { PageTransition } from '@/components/PageTransition'
 import { ParticleBackground } from '@/components/ParticleBackground'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
@@ -37,7 +38,9 @@ export default function RootLayout({
           <ParticleBackground />
           <div className="relative flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1">
+              <PageTransition>{children}</PageTransition>
+            </main>
           </div>
         </ThemeProvider>
       </body>
