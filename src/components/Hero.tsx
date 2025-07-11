@@ -1,8 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 
 import { Button } from '@/components/ui/button'
 
@@ -12,8 +12,20 @@ export function Hero() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [displayedText, setDisplayedText] = useState('')
   const [isTyping, setIsTyping] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
+    // Add a small delay before starting the animation to ensure proper hydration
+    const initTimeout = setTimeout(() => {
+      setIsInitialized(true)
+    }, 500)
+
+    return () => clearTimeout(initTimeout)
+  }, [])
+
+  useEffect(() => {
+    if (!isInitialized) return
+
     const currentWord = words[currentWordIndex]
     let timeoutId: NodeJS.Timeout
 
@@ -22,19 +34,19 @@ export function Hero() {
       if (displayedText.length < currentWord.length) {
         timeoutId = setTimeout(() => {
           setDisplayedText(currentWord.slice(0, displayedText.length + 1))
-        }, 100)
+        }, 120) // Slightly slower typing for better visibility
       } else {
         // Pause before starting to delete
         timeoutId = setTimeout(() => {
           setIsTyping(false)
-        }, 2000)
+        }, 2500) // Longer pause to read the word
       }
     } else {
       // Deleting animation
       if (displayedText.length > 0) {
         timeoutId = setTimeout(() => {
           setDisplayedText(displayedText.slice(0, -1))
-        }, 50)
+        }, 60) // Slightly slower deleting
       } else {
         // Move to next word
         setCurrentWordIndex((prev) => (prev + 1) % words.length)
@@ -43,7 +55,7 @@ export function Hero() {
     }
 
     return () => clearTimeout(timeoutId)
-  }, [displayedText, isTyping, currentWordIndex])
+  }, [displayedText, isTyping, currentWordIndex, isInitialized])
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-transparent via-bg/30 to-bg py-32 md:py-48">
