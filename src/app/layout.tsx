@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar'
 import { PageTransition } from '@/components/PageTransition'
 import { ParticleBackground } from '@/components/ParticleBackground'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { Toaster } from '@/components/ui/toaster'
 
 import './globals.css'
 
@@ -42,6 +43,7 @@ export default function RootLayout({
               <PageTransition>{children}</PageTransition>
             </main>
           </div>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
