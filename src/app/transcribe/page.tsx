@@ -253,17 +253,7 @@ export default function TranscribePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
               >
-                <RecentVideos
-                  limit={5}
-                  showRemoveButtons={true}
-                  onVideoRemoved={() => {
-                    toast({
-                      title: 'Video Removed',
-                      description: 'Video has been removed from your history',
-                      variant: 'default',
-                    })
-                  }}
-                />
+                <RecentVideos />
               </motion.div>
             </div>
           </div>
