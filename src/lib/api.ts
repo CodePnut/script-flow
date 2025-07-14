@@ -265,22 +265,39 @@ export async function checkHealth(): Promise<{
  * @returns User-friendly error message
  */
 export function handleAPIError(error: unknown): string {
+  console.error('API Error Details:', error)
+
   if (error instanceof APIError) {
+    // Check if error data has additional details
+    const errorData = error.data as {
+      error?: string
+      details?: string
+      hint?: string
+      message?: string
+    }
+
     // Handle specific error cases
     switch (error.status) {
       case 400:
         return error.message || 'Invalid request. Please check your input.'
       case 404:
-        return 'Video not found or not accessible.'
+        return errorData?.error || 'Video not found or not accessible.'
       case 413:
-        return (
-          (error.data as { message?: string })?.message ||
-          'Video is too long for transcription.'
-        )
+        return errorData?.message || 'Video is too long for transcription.'
       case 429:
         return 'Rate limit exceeded. Please try again later.'
       case 500:
-        return 'Server error. Please try again later.'
+        // For server errors, show more details if available
+        if (errorData?.details) {
+          return `${errorData.error || 'Server error'}: ${errorData.details}`
+        }
+        return (
+          errorData?.error ||
+          error.message ||
+          'Server error. Please try again later.'
+        )
+      case 504:
+        return 'Request timed out. The video might be too long or the service is overloaded.'
       default:
         return error.message || 'An unexpected error occurred.'
     }
@@ -290,7 +307,7 @@ export function handleAPIError(error: unknown): string {
     return error.message
   }
 
-  return 'An unknown error occurred.'
+  return 'An unknown error occurred. Check browser console for details.'
 }
 
 /**

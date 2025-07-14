@@ -72,9 +72,29 @@ const MAX_VIDEO_DURATION = 60 * 60 // 60 minutes in seconds
  * Process YouTube video transcription request
  */
 export async function POST(request: NextRequest) {
+  console.log('🟢 POST /api/transcribe - Request received')
+
   try {
+    // Validate environment variables
+    console.log('🔍 Checking environment variables...')
+    const hasDeepgramKey = !!process.env.DEEPGRAM_API_KEY
+    console.log(`🔍 DEEPGRAM_API_KEY exists: ${hasDeepgramKey}`)
+
+    if (!process.env.DEEPGRAM_API_KEY) {
+      console.error('🔴 DEEPGRAM_API_KEY is not set')
+      return NextResponse.json(
+        {
+          error:
+            'Transcription service not configured. Please set DEEPGRAM_API_KEY in your .env file.',
+        },
+        { status: 500 },
+      )
+    }
+
     // Validate request body
+    console.log('🔍 Parsing request body...')
     const body = await request.json()
+    console.log('🔍 Request body:', JSON.stringify(body))
     const validation = transcribeRequestSchema.safeParse(body)
 
     if (!validation.success) {
@@ -104,11 +124,20 @@ export async function POST(request: NextRequest) {
     // Check if video exists and get basic info
     let videoInfo: ytdl.videoInfo
     try {
+      console.log('🔍 Fetching video info for:', videoId)
       videoInfo = await ytdl.getInfo(videoId)
+      console.log('✅ Video found:', videoInfo.videoDetails.title)
     } catch (error) {
       console.error('🔴 Error fetching video info:', error)
+      console.error(
+        '🔴 Error details:',
+        error instanceof Error ? error.message : 'Unknown error',
+      )
       return NextResponse.json(
-        { error: 'Video not found or not accessible' },
+        {
+          error:
+            'Video not found or not accessible. YouTube might have changed their API.',
+        },
         { status: 404 },
       )
     }
@@ -149,7 +178,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create audio stream from YouTube
+    // Create audio stream from YouTube and buffer it
+    console.log('🟡 Creating audio stream from YouTube...')
     const audioStream = ytdl(youtubeUrl, {
       quality: 'highestaudio',
       filter: 'audioonly',
@@ -160,14 +190,73 @@ export async function POST(request: NextRequest) {
       console.error('🔴 YouTube stream error:', error)
     })
 
-    // Start Deepgram transcription
+    // Add stream progress logging
+    audioStream.on('progress', (chunkLength, downloaded, total) => {
+      const percent = (downloaded / total) * 100
+      console.log(`📥 Audio download progress: ${percent.toFixed(1)}%`)
+    })
+
+    // Buffer the stream
+    console.log('🟡 Buffering audio stream...')
+    const chunks: Buffer[] = []
+
+    const bufferStream = () => {
+      return new Promise<Buffer>((resolve, reject) => {
+        audioStream.on('data', (chunk: Buffer) => {
+          chunks.push(chunk)
+        })
+
+        audioStream.on('end', () => {
+          const buffer = Buffer.concat(chunks)
+          console.log(`✅ Stream buffered successfully: ${buffer.length} bytes`)
+          resolve(buffer)
+        })
+
+        audioStream.on('error', (error) => {
+          console.error('🔴 Stream error:', error)
+          reject(error)
+        })
+      })
+    }
+
+    const audioBuffer = await bufferStream()
+
+    // Start Deepgram transcription with timeout handling
     console.log('🟡 Starting Deepgram transcription for video:', videoId)
 
-    const { result, error: deepgramError } =
-      await deepgram.listen.prerecorded.transcribeFile(
-        audioStream,
+    // Add timeout wrapper for Deepgram API call
+    const transcribeWithTimeout = async (
+      buffer: Buffer,
+      options: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    ) => {
+      return Promise.race([
+        deepgram.listen.prerecorded.transcribeFile(buffer, options),
+        new Promise(
+          (_, reject) =>
+            setTimeout(
+              () => reject(new Error('Transcription timeout')),
+              300000,
+            ), // 5 minutes timeout
+        ),
+      ])
+    }
+
+    let result, deepgramError
+    try {
+      const response = (await transcribeWithTimeout(
+        audioBuffer,
         DEEPGRAM_OPTIONS,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      )) as any
+      result = response.result
+      deepgramError = response.error
+    } catch (error) {
+      console.error('🔴 Deepgram timeout or error:', error)
+      return NextResponse.json(
+        { error: 'Transcription service timed out. Please try again.' },
+        { status: 504 },
       )
+    }
 
     if (deepgramError) {
       console.error('🔴 Deepgram error:', deepgramError)
@@ -189,7 +278,8 @@ export async function POST(request: NextRequest) {
     // Process chapters from paragraphs
     const chapters =
       result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs?.paragraphs?.map(
-        (paragraph, index) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (paragraph: any, index: number) => ({
           id: `chapter-${index + 1}`,
           title: `Chapter ${index + 1}`,
           start: paragraph.start,
@@ -202,7 +292,8 @@ export async function POST(request: NextRequest) {
     // Process utterances for detailed transcript
     const utterances =
       result.results?.channels?.[0]?.alternatives?.[0]?.words?.map(
-        (word, index) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (word: any, index: number) => ({
           id: `utterance-${index}`,
           start: word.start,
           end: word.end,
@@ -251,10 +342,20 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('🔴 Transcription API error:', error)
+    console.error(
+      '🔴 Error stack:',
+      error instanceof Error ? error.stack : 'No stack trace',
+    )
 
-    // Return generic error to avoid leaking sensitive information
+    // Return more helpful error message
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred'
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Transcription failed',
+        details: errorMessage,
+        hint: 'Check the server console for more details',
+      },
       { status: 500 },
     )
   }
