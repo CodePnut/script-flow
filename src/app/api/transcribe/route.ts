@@ -20,8 +20,8 @@
  */
 
 import { createClient } from '@deepgram/sdk'
+import ytdl from '@distube/ytdl-core'
 import { NextRequest, NextResponse } from 'next/server'
-import ytdl from 'ytdl-core'
 import { z } from 'zod'
 
 import { getUserIdentifier } from '@/lib/ipHash'
