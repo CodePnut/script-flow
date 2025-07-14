@@ -87,6 +87,17 @@ export const useHistoryStore = create<HistoryState>()(
       name: 'script-flow-history', // localStorage key
       // Only persist the history array, not the functions
       partialize: (state) => ({ history: state.history }),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      onRehydrateStorage: (_state) => {
+        return (rehydratedState, error) => {
+          if (!error && rehydratedState?.history) {
+            rehydratedState.history = rehydratedState.history.map((item) => ({
+              ...item,
+              createdAt: new Date(item.createdAt),
+            }))
+          }
+        }
+      },
     },
   ),
 )

@@ -1,7 +1,12 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import React, { forwardRef, useImperativeHandle, useRef } from 'react'
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useEffect,
+} from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -85,24 +90,34 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     // Expose player methods through ref
     useImperativeHandle(ref, () => ({
       seekTo: (seconds: number) => {
-        if (playerRef.current) {
+        if (
+          playerRef.current &&
+          typeof playerRef.current.seekTo === 'function'
+        ) {
           playerRef.current.seekTo(seconds, 'seconds')
           onSeek?.(seconds)
         }
       },
 
       getCurrentTime: () => {
-        return playerRef.current?.getCurrentTime() || 0
+        return playerRef.current?.getCurrentTime?.() || 0
       },
 
       getDuration: () => {
-        return playerRef.current?.getDuration() || 0
+        return playerRef.current?.getDuration?.() || 0
       },
 
       getInternalPlayer: () => {
-        return playerRef.current?.getInternalPlayer()
+        return playerRef.current?.getInternalPlayer?.()
       },
     }))
+
+    // Handle onReady callback when player is available
+    useEffect(() => {
+      if (playerRef.current && onReady) {
+        onReady()
+      }
+    }, [onReady])
 
     // Generate YouTube URL from video ID
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
@@ -112,7 +127,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         {/* Responsive container with 16:9 aspect ratio */}
         <div className="relative w-full pb-[56.25%] h-0 overflow-hidden rounded-lg bg-muted">
           {/* Cast to any to bypass type issues - will refactor types later */}
-          {React.createElement(ReactPlayer as any, {  // eslint-disable-line @typescript-eslint/no-explicit-any
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {React.createElement(ReactPlayer as React.ComponentType<any>, {
             ref: playerRef,
             url: videoUrl,
             width: '100%',
@@ -126,7 +142,6 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
             controls,
             volume,
             playbackRate,
-            onReady,
             onProgress,
             onPlay,
             onPause,

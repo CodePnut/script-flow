@@ -202,13 +202,13 @@ export const mockVideoDatabase: Record<string, VideoData> = {
       source: 'mock',
     },
   },
-  IsXrCBlAshg: {
-    videoId: 'IsXrCBlAshg',
+  jNQXAC9IVRw: {
+    videoId: 'jNQXAC9IVRw',
     title: 'Advanced React Patterns and Best Practices',
     description:
       'Deep dive into advanced React patterns, hooks, and performance optimization techniques.',
     duration: 180.5,
-    thumbnailUrl: getThumbnailUrl('IsXrCBlAshg'),
+    thumbnailUrl: getThumbnailUrl('jNQXAC9IVRw'),
     transcript: [
       {
         id: 'seg-adv-001',
@@ -288,7 +288,12 @@ export async function fetchMockVideoData(
   }
 
   // Deep clone to avoid mutations
-  return JSON.parse(JSON.stringify(videoData))
+  const clonedData = JSON.parse(JSON.stringify(videoData))
+
+  // Convert generatedAt back to Date object after JSON deserialization
+  clonedData.metadata.generatedAt = new Date(clonedData.metadata.generatedAt)
+
+  return clonedData
 }
 
 /**

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ExternalLink, Share2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, use } from 'react'
 
 import { ChapterList } from '@/components/ChapterList'
 import { SummaryCard } from '@/components/SummaryCard'
@@ -29,10 +29,8 @@ interface VideoViewerPageProps {
 /**
  * Video viewer page component
  */
-export default async function VideoViewerPage({
-  params,
-}: VideoViewerPageProps) {
-  const { videoId: rawVideoId } = await params
+export default function VideoViewerPage({ params }: VideoViewerPageProps) {
+  const { videoId: rawVideoId } = use(params)
 
   // Normalize video ID from URL
   const videoId = normalizeVideoId(rawVideoId)
