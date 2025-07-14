@@ -18,7 +18,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { prisma } from '@/lib/prisma'
-import type { VideoData } from '@/lib/transcript'
+import type {
+  VideoData,
+  TranscriptSegment,
+  VideoChapter,
+} from '@/lib/transcript'
 
 /**
  * GET /api/transcript/[id]
@@ -92,7 +96,9 @@ export async function GET(
       metadata: {
         language: transcript.language,
         generatedAt: transcript.createdAt,
-        source: (transcript.metadata as any)?.source || 'deepgram',
+        source:
+          (transcript.metadata as { source?: 'mock' | 'deepgram' | 'whisper' })
+            ?.source || 'deepgram',
       },
     }
 
@@ -110,36 +116,44 @@ export async function GET(
 /**
  * Convert database utterances to frontend transcript segments
  */
-function convertUtterancesToSegments(utterances: any): any[] {
+function convertUtterancesToSegments(utterances: unknown): TranscriptSegment[] {
   if (!utterances || !Array.isArray(utterances)) {
     return []
   }
 
-  return utterances.map((utterance: any, index: number) => ({
-    id: utterance.id || `seg-${index + 1}`,
-    start: utterance.start || 0,
-    end: utterance.end || 0,
-    text: utterance.text || '',
-    speaker: utterance.speaker ? `Speaker ${utterance.speaker}` : 'Speaker',
-    confidence: utterance.confidence || 0.95,
-  }))
+  return utterances.map((utterance: unknown, index: number) => {
+    const u = utterance as Record<string, unknown>
+    return {
+      id: (u.id as string) || `seg-${index + 1}`,
+      start: (u.start as number) || 0,
+      end: (u.end as number) || 0,
+      text: (u.text as string) || '',
+      speaker: u.speaker ? `Speaker ${u.speaker}` : 'Speaker',
+      confidence: (u.confidence as number) || 0.95,
+    }
+  })
 }
 
 /**
  * Convert database chapters to frontend video chapters
  */
-function convertChaptersToVideoChapters(chapters: any): any[] {
+function convertChaptersToVideoChapters(chapters: unknown): VideoChapter[] {
   if (!chapters || !Array.isArray(chapters)) {
     return []
   }
 
-  return chapters.map((chapter: any) => ({
-    id: chapter.id || `chapter-${Math.random().toString(36).substr(2, 9)}`,
-    title: chapter.title || 'Untitled Chapter',
-    start: chapter.start || 0,
-    end: chapter.end || 0,
-    description: chapter.description || '',
-  }))
+  return chapters.map((chapter: unknown) => {
+    const c = chapter as Record<string, unknown>
+    return {
+      id:
+        (c.id as string) ||
+        `chapter-${Math.random().toString(36).substr(2, 9)}`,
+      title: (c.title as string) || 'Untitled Chapter',
+      start: (c.start as number) || 0,
+      end: (c.end as number) || 0,
+      description: (c.description as string) || '',
+    }
+  })
 }
 
 /**

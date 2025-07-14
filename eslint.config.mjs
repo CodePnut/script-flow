@@ -13,6 +13,24 @@ const compat = new FlatCompat({
 })
 
 const eslintConfig = [
+  {
+    ignores: [
+      'src/generated/**',
+      '**/generated/**',
+      '**/*.generated.js',
+      '**/*.generated.ts',
+      '**/wasm*.js',
+      '**/runtime/**',
+      '**/prisma/runtime/**',
+      '.next/**',
+      'out/**',
+      'node_modules/**',
+      'coverage/**',
+      'test-results/**',
+      'playwright-report/**',
+      'storybook-static/**',
+    ],
+  },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   ...compat.extends('eslint-config-prettier'),
   ...compat.extends('plugin:jsx-a11y/recommended'),

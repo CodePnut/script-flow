@@ -38,7 +38,21 @@ import {
  */
 interface TranscriptTableProps {
   className?: string
-  data?: any // Server-side data from history API
+  data?: {
+    items: VideoHistoryItem[]
+    pagination: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+      hasNextPage: boolean
+      hasPreviousPage: boolean
+    }
+    meta?: {
+      userHash: string
+      timestamp: string
+    }
+  } | null // Server-side data from history API
   loading?: boolean
   error?: string | null
   onPageChange?: (page: number) => void
@@ -87,8 +101,8 @@ export function TranscriptTable({
   data,
   loading = false,
   error = null,
-  onPageChange,
-  currentPage = 1,
+  onPageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
+  currentPage = 1, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: TranscriptTableProps) {
   const { history, removeFromHistory } = useHistoryStore()
   const [sorting, setSorting] = useState<SortingState>([])

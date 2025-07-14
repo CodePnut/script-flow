@@ -40,6 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# IDE specific files
+.cursor/
+.vscode/
+.idea/
+
 *storybook.log
 storybook-static
 

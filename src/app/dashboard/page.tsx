@@ -2,11 +2,12 @@
 
 import { motion } from 'framer-motion'
 import { Database } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 import { TranscriptTable } from '@/components/TranscriptTable'
-import { getHistory, handleAPIError } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
+import { type VideoHistoryItem } from '@/hooks/useHistoryStore'
+import { getHistory, handleAPIError } from '@/lib/api'
 
 // Note: Metadata export is removed since this is now a client component
 // TODO: Move metadata to a parent server component if needed
@@ -26,7 +27,21 @@ import { useToast } from '@/components/ui/use-toast'
  * - Real-time data fetching with error handling
  */
 export default function DashboardPage() {
-  const [historyData, setHistoryData] = useState<any>(null)
+  const [historyData, setHistoryData] = useState<{
+    items: VideoHistoryItem[]
+    pagination: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+      hasNextPage: boolean
+      hasPreviousPage: boolean
+    }
+    meta?: {
+      userHash: string
+      timestamp: string
+    }
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -35,34 +50,37 @@ export default function DashboardPage() {
   /**
    * Fetch history data from API
    */
-  const fetchHistory = async (page: number = 1) => {
-    try {
-      setLoading(true)
-      setError(null)
+  const fetchHistory = useCallback(
+    async (page: number = 1) => {
+      try {
+        setLoading(true)
+        setError(null)
 
-      const data = await getHistory(page, 10)
-      setHistoryData(data)
-      setCurrentPage(page)
-    } catch (err) {
-      const errorMessage = handleAPIError(err)
-      setError(errorMessage)
+        const data = await getHistory(page, 10)
+        setHistoryData(data)
+        setCurrentPage(page)
+      } catch (err) {
+        const errorMessage = handleAPIError(err)
+        setError(errorMessage)
 
-      toast({
-        title: 'Error Loading History',
-        description: errorMessage,
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+        toast({
+          title: 'Error Loading History',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [toast],
+  )
 
   /**
    * Load initial data on component mount
    */
   useEffect(() => {
     fetchHistory(1)
-  }, [])
+  }, [fetchHistory])
 
   /**
    * Handle page changes

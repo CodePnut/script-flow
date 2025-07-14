@@ -15,6 +15,9 @@
 
 import { z } from 'zod'
 
+import { type VideoHistoryItem } from '@/hooks/useHistoryStore'
+import { type VideoData } from '@/lib/transcript'
+
 /**
  * API response types
  */
@@ -30,7 +33,7 @@ export interface TranscriptionResponse {
 export interface TranscriptionError {
   error: string
   message?: string
-  details?: any[]
+  details?: string[]
   duration?: number
   maxDuration?: number
 }
@@ -49,7 +52,7 @@ export class APIError extends Error {
   constructor(
     message: string,
     public status: number,
-    public data?: any,
+    public data?: unknown,
   ) {
     super(message)
     this.name = 'APIError'
@@ -149,7 +152,6 @@ export async function startTranscription(
   // In a real webhook implementation, this would come from server-sent events
   if (onProgress) {
     const progressInterval = setInterval(() => {
-      const randomProgress = Math.random() * 20
       onProgress(Math.min(95, Math.random() * 100))
     }, 1000)
 
@@ -191,7 +193,7 @@ export async function startTranscription(
  * @param transcriptId - Transcript ID to fetch
  * @returns Promise with transcript data
  */
-export async function getTranscript(transcriptId: string): Promise<any> {
+export async function getTranscript(transcriptId: string): Promise<VideoData> {
   return apiRequest(`/api/transcript/${transcriptId}`)
 }
 
@@ -201,7 +203,7 @@ export async function getTranscript(transcriptId: string): Promise<any> {
  * @param videoId - YouTube video ID
  * @returns Promise with video data
  */
-export async function getVideo(videoId: string): Promise<any> {
+export async function getVideo(videoId: string): Promise<VideoData> {
   return apiRequest(`/api/video/${videoId}`)
 }
 
@@ -216,10 +218,19 @@ export async function getHistory(
   page: number = 1,
   limit: number = 10,
 ): Promise<{
-  items: any[]
-  page: number
-  totalPages: number
-  total: number
+  items: VideoHistoryItem[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }
+  meta?: {
+    userHash: string
+    timestamp: string
+  }
 }> {
   return apiRequest(`/api/history?page=${page}&limit=${limit}`)
 }
@@ -252,7 +263,10 @@ export function handleAPIError(error: unknown): string {
       case 404:
         return 'Video not found or not accessible.'
       case 413:
-        return error.data?.message || 'Video is too long for transcription.'
+        return (
+          (error.data as { message?: string })?.message ||
+          'Video is too long for transcription.'
+        )
       case 429:
         return 'Rate limit exceeded. Please try again later.'
       case 500:
@@ -273,20 +287,38 @@ export function handleAPIError(error: unknown): string {
  * Type guards for API responses
  */
 export function isTranscriptionResponse(
-  data: any,
+  data: unknown,
 ): data is TranscriptionResponse {
+  if (!data || typeof data !== 'object' || data === null) {
+    return false
+  }
+
+  const obj = data as Record<string, unknown>
+
   return (
-    data &&
-    typeof data.transcriptId === 'string' &&
-    typeof data.videoId === 'string' &&
-    typeof data.title === 'string' &&
-    typeof data.status === 'string' &&
-    typeof data.duration === 'number'
+    'transcriptId' in obj &&
+    'videoId' in obj &&
+    'title' in obj &&
+    'status' in obj &&
+    'duration' in obj &&
+    typeof obj.transcriptId === 'string' &&
+    typeof obj.videoId === 'string' &&
+    typeof obj.title === 'string' &&
+    typeof obj.status === 'string' &&
+    typeof obj.duration === 'number'
   )
 }
 
-export function isTranscriptionError(data: any): data is TranscriptionError {
-  return data && typeof data.error === 'string'
+export function isTranscriptionError(
+  data: unknown,
+): data is TranscriptionError {
+  if (!data || typeof data !== 'object' || data === null) {
+    return false
+  }
+
+  const obj = data as Record<string, unknown>
+
+  return 'error' in obj && typeof obj.error === 'string'
 }
 
 /**
