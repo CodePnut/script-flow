@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
@@ -26,7 +26,7 @@ interface SummaryCardProps {
   metadata?: {
     title: string
     duration: number
-    generatedAt: Date
+    generatedAt: Date | string
     source: string
     language: string
   }
@@ -236,9 +236,7 @@ export function SummaryCard({
 
               <div className="flex items-center gap-2 text-muted-fg">
                 <Calendar className="h-4 w-4" />
-                <span>
-                  Generated: {metadata.generatedAt.toLocaleDateString()}
-                </span>
+                <span>Generated: {formatDate(metadata.generatedAt)}</span>
               </div>
 
               <div className="flex items-center gap-2 text-muted-fg">

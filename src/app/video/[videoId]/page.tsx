@@ -16,6 +16,7 @@ import { VideoPlayer, type VideoPlayerRef } from '@/components/VideoPlayer'
 import { getVideo, handleAPIError } from '@/lib/api'
 import type { VideoData } from '@/lib/transcript'
 import { normalizeVideoId } from '@/lib/transcript'
+import { formatDate } from '@/lib/utils'
 
 /**
  * Video viewer page props
@@ -87,6 +88,11 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
    * Handle timestamp clicks from transcript/chapters
    */
   const handleTimestampClick = (seconds: number) => {
+    if (!videoPlayerRef.current) {
+      console.error('VideoViewer - videoPlayerRef.current is null!')
+      return
+    }
+
     videoPlayerRef.current?.seekTo(seconds)
   }
 
@@ -242,8 +248,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
 
                     <div className="flex items-center gap-4 text-sm text-muted-fg">
                       <span>
-                        Generated:{' '}
-                        {videoData.metadata.generatedAt.toLocaleDateString()}
+                        Generated: {formatDate(videoData.metadata.generatedAt)}
                       </span>
                       <span>•</span>
                       <span>Source: {videoData.metadata.source}</span>

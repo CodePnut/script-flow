@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
       duration: transcript.duration,
       language: transcript.language,
       status: transcript.status,
+      url: `https://www.youtube.com/watch?v=${transcript.videoId}`,
       thumbnailUrl: `https://img.youtube.com/vi/${transcript.videoId}/maxresdefault.jpg`,
       createdAt: transcript.createdAt,
       updatedAt: transcript.updatedAt,

@@ -40,9 +40,9 @@ const transcribeRequestSchema = z.object({
 
 /**
  * Deepgram client configuration
- * Optimized for video transcription with enhanced features
+ * Following official Deepgram documentation best practices
  */
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY!)
+const getDeepgramClient = () => createClient(process.env.DEEPGRAM_API_KEY!)
 
 /**
  * Deepgram transcription options
@@ -229,6 +229,7 @@ export async function POST(request: NextRequest) {
       buffer: Buffer,
       options: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     ) => {
+      const deepgram = getDeepgramClient()
       return Promise.race([
         deepgram.listen.prerecorded.transcribeFile(buffer, options),
         new Promise(

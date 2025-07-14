@@ -34,12 +34,24 @@ import {
 } from './ui/table'
 
 /**
+ * Extended video history item for API responses
+ */
+interface ApiVideoHistoryItem extends VideoHistoryItem {
+  description?: string
+  duration?: number
+  language?: string
+  status?: string
+  thumbnailUrl?: string
+  updatedAt?: Date | string
+}
+
+/**
  * TranscriptTable component props
  */
 interface TranscriptTableProps {
   className?: string
   data?: {
-    items: VideoHistoryItem[]
+    items: ApiVideoHistoryItem[]
     pagination: {
       page: number
       limit: number
@@ -71,9 +83,16 @@ function formatDuration(seconds: number): string {
 /**
  * Format date to relative time string
  */
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(date: Date | string): string {
   const now = new Date()
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+
+  // Handle invalid dates
+  if (isNaN(dateObj.getTime())) {
+    return 'Unknown date'
+  }
+
+  const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000)
 
   if (diffInSeconds < 60) return 'Just now'
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
@@ -81,7 +100,7 @@ function formatRelativeTime(date: Date): string {
   if (diffInSeconds < 2592000)
     return `${Math.floor(diffInSeconds / 86400)}d ago`
 
-  return date.toLocaleDateString()
+  return dateObj.toLocaleDateString()
 }
 
 /**
@@ -109,10 +128,12 @@ export function TranscriptTable({
 
   // Use server-side data if provided, otherwise fall back to client-side store
   const useServerData = data !== undefined
-  const items = useServerData ? data?.items || [] : history
+  const items: ApiVideoHistoryItem[] = useServerData
+    ? data?.items || []
+    : history.map((item) => ({ ...item, duration: 0 }))
 
   // Define table columns
-  const columns: ColumnDef<VideoHistoryItem>[] = [
+  const columns: ColumnDef<ApiVideoHistoryItem>[] = [
     {
       accessorKey: 'title',
       header: ({ column }) => (
@@ -195,13 +216,19 @@ export function TranscriptTable({
         return (
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/video/${video.videoId}`}>
+              <Link href={`/video/${video.videoId || ''}`}>
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
-              <Link href={video.url} target="_blank">
+              <Link
+                href={
+                  video.url ||
+                  `https://www.youtube.com/watch?v=${video.videoId}`
+                }
+                target="_blank"
+              >
                 <ExternalLink className="h-4 w-4" />
               </Link>
             </Button>
@@ -384,19 +411,29 @@ export function TranscriptTable({
                   <div className="flex items-center gap-4 text-xs text-muted-fg mb-3">
                     <span>{formatRelativeTime(video.createdAt)}</span>
                     <span>•</span>
-                    <span>{formatDuration(180)}</span>
+                    <span>
+                      {formatDuration(
+                        (video as ApiVideoHistoryItem).duration || 0,
+                      )}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/video/${video.videoId}`}>
+                      <Link href={`/video/${video.videoId || ''}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Link>
                     </Button>
 
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={video.url} target="_blank">
+                      <Link
+                        href={
+                          video.url ||
+                          `https://www.youtube.com/watch?v=${video.videoId}`
+                        }
+                        target="_blank"
+                      >
                         <ExternalLink className="h-4 w-4 mr-1" />
                         YouTube
                       </Link>

@@ -52,7 +52,7 @@ function VideoItem({ video, index, onRemove }: VideoItemProps) {
               <div className="relative flex-shrink-0 rounded-lg overflow-hidden bg-muted">
                 <Image
                   src={video.thumbnailUrl}
-                  alt={video.title}
+                  alt={`Thumbnail for ${video.title || 'video'}`}
                   width={120}
                   height={90}
                   className="object-cover transition-transform duration-300 group-hover:scale-105"

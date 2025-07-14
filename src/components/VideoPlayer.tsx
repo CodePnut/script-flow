@@ -32,8 +32,6 @@ interface VideoPlayerProps {
   videoId: string
   /** Custom className for styling */
   className?: string
-  /** Callback when player is ready */
-  onReady?: () => void
   /** Callback when playback progress updates */
   onProgress?: (state: { playedSeconds: number }) => void
   /** Callback when video starts playing */
@@ -72,7 +70,6 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     {
       videoId,
       className,
-      onReady,
       onProgress,
       onPlay,
       onPause,
@@ -112,12 +109,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       },
     }))
 
-    // Handle onReady callback when player is available
-    useEffect(() => {
-      if (playerRef.current && onReady) {
-        onReady()
-      }
-    }, [onReady])
+    // Player ref is available after component mounts
 
     // Generate YouTube URL from video ID
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
@@ -126,9 +118,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       <div className={cn('relative w-full', className)}>
         {/* Responsive container with 16:9 aspect ratio */}
         <div className="relative w-full pb-[56.25%] h-0 overflow-hidden rounded-lg bg-muted">
-          {/* Cast to any to bypass type issues - will refactor types later */}
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {React.createElement(ReactPlayer as React.ComponentType<any>, {
+          {/* Use React.createElement to avoid TypeScript issues with dynamic import */}
+          {React.createElement(ReactPlayer as any, {
             ref: playerRef,
             url: videoUrl,
             width: '100%',
@@ -143,9 +134,14 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
             volume,
             playbackRate,
             onProgress,
-            onPlay,
+            onPlay: () => {
+              onPlay?.()
+            },
             onPause,
             onEnded,
+            onError: (error: any) => {
+              console.error('VideoPlayer - onError:', error)
+            },
           })}
         </div>
 

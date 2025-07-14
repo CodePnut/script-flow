@@ -65,7 +65,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
   const url = `${baseURL}${endpoint}`
 
   try {
@@ -80,11 +80,21 @@ async function apiRequest<T>(
     const data = await response.json()
 
     if (!response.ok) {
-      throw new APIError(
+      const apiError = new APIError(
         data.error || 'API request failed',
         response.status,
         data,
       )
+
+      // Don't log expected 404 errors to avoid console clutter
+      if (response.status !== 404) {
+        console.error(
+          `API Error (${response.status}):`,
+          data.error || 'Unknown error',
+        )
+      }
+
+      throw apiError
     }
 
     return data
@@ -352,7 +362,7 @@ export function isTranscriptionError(
  * Configuration constants
  */
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  BASE_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
   TIMEOUT: 30000, // 30 seconds
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second

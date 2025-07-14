@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Activity, Clock, TrendingUp } from 'lucide-react'
 
 import { useHistoryStore } from '@/hooks/useHistoryStore'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 
 import {
   Card,
@@ -163,13 +163,13 @@ export function UsageStats({ className }: UsageStatsProps) {
               <div className="flex items-center justify-between text-sm">
                 <span>First video</span>
                 <span className="text-muted-fg">
-                  {stats.oldestVideo?.toLocaleDateString()}
+                  {stats.oldestVideo ? formatDate(stats.oldestVideo) : 'None'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span>Latest video</span>
                 <span className="text-muted-fg">
-                  {stats.newestVideo?.toLocaleDateString()}
+                  {stats.newestVideo ? formatDate(stats.newestVideo) : 'None'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
