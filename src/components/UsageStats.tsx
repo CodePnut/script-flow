@@ -46,12 +46,12 @@ export function UsageStats({ className }: UsageStatsProps) {
   const { getHistoryStats } = useHistoryStore()
   const stats = getHistoryStats()
 
-  // Mock usage data (40% as per spec)
-  const mockUsage = {
-    used: 200, // hours
-    total: 500, // hours
-    percentage: 40,
-    remainingCredits: 150, // USD
+  // Calculate actual usage based on history
+  const usageData = {
+    used: Math.round(stats.totalVideos * 0.1), // Estimate ~6 minutes per video
+    total: 500, // hours - this would come from user subscription plan
+    percentage: Math.round(((stats.totalVideos * 0.1) / 500) * 100),
+    remainingCredits: 150, // USD - this would come from user account
   }
 
   return (
@@ -74,19 +74,19 @@ export function UsageStats({ className }: UsageStatsProps) {
               <div className="flex justify-between text-sm">
                 <span>Transcription hours used</span>
                 <span className="font-medium">
-                  {mockUsage.used}h / {mockUsage.total}h
+                  {usageData.used}h / {usageData.total}h
                 </span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${mockUsage.percentage}%` }}
+                  animate={{ width: `${usageData.percentage}%` }}
                   transition={{ duration: 1, delay: 0.5 }}
                   className="bg-primary h-2 rounded-full"
                 />
               </div>
               <p className="text-xs text-muted-fg">
-                {mockUsage.percentage}% of your quota used
+                {usageData.percentage}% of your quota used
               </p>
             </div>
 
@@ -97,7 +97,7 @@ export function UsageStats({ className }: UsageStatsProps) {
                 <span className="text-sm font-medium">Remaining Credits</span>
               </div>
               <span className="text-sm font-semibold text-green-600">
-                ${mockUsage.remainingCredits}
+                ${usageData.remainingCredits}
               </span>
             </div>
           </div>

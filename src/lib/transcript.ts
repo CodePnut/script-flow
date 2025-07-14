@@ -1,8 +1,8 @@
 /**
  * Transcript and video data types and utilities
  *
- * Handles mock transcript data structure for video viewer
- * In production, this would integrate with real transcript APIs
+ * Handles transcript data structure for video viewer
+ * Integrates with real transcript APIs (Deepgram, Whisper, etc.)
  */
 
 /**

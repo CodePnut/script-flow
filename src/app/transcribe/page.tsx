@@ -38,7 +38,7 @@ export default function TranscribePage() {
 
   /**
    * Handle URL form submission
-   * Validates URL, simulates transcription, and updates history
+   * Validates URL, starts real transcription, and updates history
    */
   const handleUrlSubmit = async (url: string) => {
     try {

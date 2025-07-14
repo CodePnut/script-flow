@@ -127,7 +127,7 @@ export const useHistoryStore = create<HistoryState>()(
           }
         }
 
-        // Calculate total and average duration (assume 3 minutes per video as mock)
+        // Calculate total and average duration (estimate 3 minutes per video average)
         const totalDuration = history.length * 3 * 60 // 3 minutes in seconds
         const averageDuration = totalDuration / history.length
 

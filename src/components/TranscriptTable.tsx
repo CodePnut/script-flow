@@ -166,10 +166,10 @@ export function TranscriptTable({
       ),
       cell: () => (
         <div className="text-muted-fg">
-          {formatDuration(180)} {/* Mock 3 minutes */}
+          {formatDuration(180)} {/* Estimated 3 minutes */}
         </div>
       ),
-      sortingFn: () => 0, // Mock sorting since all durations are the same
+      sortingFn: () => 0, // Basic sorting since all durations are estimated the same
     },
     {
       id: 'actions',

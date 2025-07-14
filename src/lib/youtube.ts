@@ -107,27 +107,3 @@ export function parseYouTubeUrl(url: string): {
     thumbnailUrl: getThumbnailUrl(videoId),
   }
 }
-
-/**
- * Mock function to simulate fetching video metadata
- * In a real app, this would use YouTube Data API
- * @param videoId - YouTube video ID
- * @returns Promise with mock video data
- */
-export async function fetchVideoMetadata(): Promise<{
-  title: string
-  description: string
-  duration: string
-  channelTitle: string
-}> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  // Return mock data - in real app would fetch from YouTube API
-  return {
-    title: 'Mock Video Title',
-    description: 'This is a mock video description for testing purposes.',
-    duration: '5:42',
-    channelTitle: 'Mock Channel',
-  }
-}

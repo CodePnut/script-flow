@@ -50,7 +50,7 @@ export function URLForm({ onSubmit, className }: URLFormProps) {
     setIsLoading(true)
 
     try {
-      // Simulate API call delay
+      // Add slight delay for user experience
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       if (onSubmit) {

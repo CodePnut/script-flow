@@ -10,61 +10,59 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 /**
  * User model for authentication and transcript ownership
- * 
  * Supports future authentication integration with Supabase
  * Currently optional for public transcription functionality
  */
 model User {
-  id          String      @id @default(cuid())
-  email       String      @unique
+  id          String       @id @default(cuid())
+  email       String       @unique
   transcripts Transcript[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@map("users")
 }
 
 /**
  * Transcript model for storing video transcription data
- * 
  * Core entity that holds all transcription results from Deepgram
  * Supports both authenticated and anonymous users (via IP hash)
  */
 model Transcript {
-  id          String   @id @default(cuid())
-  videoId     String   @map("video_id")
+  id          String  @id @default(cuid())
+  videoId     String  @map("video_id")
   title       String
-  description String?  @db.Text
-  summary     String?  @db.Text
-  language    String   @default("en")
-  duration    Float?   // Video duration in seconds
-  
+  description String? @db.Text
+  summary     String? @db.Text
+  language    String  @default("en")
+  duration    Float? // Video duration in seconds
+
   // JSON fields for structured data
-  chapters    Json?    // Auto-generated chapters
-  utterances  Json     // Raw Deepgram transcript segments
-  metadata    Json?    // Additional metadata (source, quality, etc.)
-  
+  chapters   Json? // Auto-generated chapters
+  utterances Json // Raw Deepgram transcript segments
+  metadata   Json? // Additional metadata (source, quality, etc.)
+
   // Deepgram integration fields
-  deepgramJob String   @unique @map("deepgram_job")
-  status      String   @default("pending") // pending, processing, completed, failed
-  
+  deepgramJob String @unique @map("deepgram_job")
+  status      String @default("pending") // pending, processing, completed, failed
+
   // User relationship (optional for anonymous usage)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String?  @map("user_id")
-  
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String? @map("user_id")
+
   // IP-based tracking for anonymous users (privacy-preserving)
-  ipHash      String?  @map("ip_hash")
-  
+  ipHash String? @map("ip_hash")
+
   // Timestamps
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   // Composite indexes for efficient queries
   @@index([videoId])
   @@index([videoId, status])
@@ -72,7 +70,6 @@ model Transcript {
   @@index([ipHash])
   @@index([ipHash, createdAt])
   @@index([status, createdAt])
-  
   @@map("transcripts")
 }
 

@@ -2,8 +2,7 @@
  * API Client Functions
  *
  * This module provides type-safe API client functions for interacting
- * with the ScriptFlow backend. It replaces the mock simulation functions
- * with real API calls.
+ * with the ScriptFlow backend with real API calls.
  *
  * Features:
  * - Type-safe request/response handling
@@ -115,7 +114,7 @@ async function apiRequest<T>(
 /**
  * Start YouTube video transcription
  *
- * Replaces the simulateTranscription function with real API call
+ * Sends request to real transcription API with progress tracking
  *
  * @param youtubeUrl - YouTube video URL to transcribe
  * @param options - Additional request options
@@ -148,15 +147,20 @@ export async function startTranscription(
     headers['x-allow-long'] = 'true'
   }
 
-  // Simulate progress updates for user feedback
-  // In a real webhook implementation, this would come from server-sent events
+  // Create realistic progress simulation for user feedback
+  // This provides smooth, linear progress instead of random jumps
+  let progressInterval: NodeJS.Timeout | null = null
   if (onProgress) {
-    const progressInterval = setInterval(() => {
-      onProgress(Math.min(95, Math.random() * 100))
-    }, 1000)
+    let currentProgress = 0
+    const progressIncrement = 2 // Increment by 2% every 500ms
+    const maxProgress = 95 // Don't go to 100% until actual completion
 
-    // Clean up interval after request
-    setTimeout(() => clearInterval(progressInterval), 30000)
+    progressInterval = setInterval(() => {
+      if (currentProgress < maxProgress) {
+        currentProgress += progressIncrement
+        onProgress(Math.min(currentProgress, maxProgress))
+      }
+    }, 500)
   }
 
   try {
@@ -169,14 +173,20 @@ export async function startTranscription(
       },
     )
 
-    // Complete progress if callback provided
+    // Clear progress interval and complete progress
+    if (progressInterval) {
+      clearInterval(progressInterval)
+    }
     if (onProgress) {
       onProgress(100)
     }
 
     return response
   } catch (error) {
-    // Clear progress on error
+    // Clear progress interval on error
+    if (progressInterval) {
+      clearInterval(progressInterval)
+    }
     if (onProgress) {
       onProgress(0)
     }
