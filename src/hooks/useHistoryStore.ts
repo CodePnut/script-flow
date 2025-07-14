@@ -25,6 +25,15 @@ interface HistoryState {
   removeFromHistory: (id: string) => void
   clearHistory: () => void
   getRecentVideos: (limit?: number) => VideoHistoryItem[]
+  clearAllHistory: () => void
+  exportHistory: () => string
+  getHistoryStats: () => {
+    totalVideos: number
+    totalDuration: number
+    averageDuration: number
+    oldestVideo: Date | null
+    newestVideo: Date | null
+  }
 }
 
 /**
@@ -35,6 +44,8 @@ interface HistoryState {
  * - Automatic timestamp generation
  * - Automatic ID generation using cuid2
  * - Recent videos retrieval with configurable limit
+ * - Bulk operations and data export
+ * - Usage statistics
  * - Type-safe operations
  */
 export const useHistoryStore = create<HistoryState>()(
@@ -82,10 +93,63 @@ export const useHistoryStore = create<HistoryState>()(
         const { history } = get()
         return history.slice(0, limit)
       },
+
+      /**
+       * Clear all history (alias for clearHistory for consistency)
+       */
+      clearAllHistory: () => {
+        set({ history: [] })
+      },
+
+      /**
+       * Export history as JSON string
+       * @returns JSON string of all history items
+       */
+      exportHistory: () => {
+        const { history } = get()
+        return JSON.stringify(history, null, 2)
+      },
+
+      /**
+       * Get usage statistics about the history
+       * @returns Object with various stats about the history
+       */
+      getHistoryStats: () => {
+        const { history } = get()
+
+        if (history.length === 0) {
+          return {
+            totalVideos: 0,
+            totalDuration: 0,
+            averageDuration: 0,
+            oldestVideo: null,
+            newestVideo: null,
+          }
+        }
+
+        // Calculate total and average duration (assume 3 minutes per video as mock)
+        const totalDuration = history.length * 3 * 60 // 3 minutes in seconds
+        const averageDuration = totalDuration / history.length
+
+        // Find oldest and newest videos
+        const sortedByDate = [...history].sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+        )
+        const oldestVideo = sortedByDate[0]?.createdAt || null
+        const newestVideo =
+          sortedByDate[sortedByDate.length - 1]?.createdAt || null
+
+        return {
+          totalVideos: history.length,
+          totalDuration,
+          averageDuration,
+          oldestVideo,
+          newestVideo,
+        }
+      },
     }),
     {
       name: 'script-flow-history', // localStorage key
-      // Only persist the history array, not the functions
       partialize: (state) => ({ history: state.history }),
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       onRehydrateStorage: (_state) => {

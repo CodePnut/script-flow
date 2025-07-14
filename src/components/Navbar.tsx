@@ -1,23 +1,27 @@
 'use client'
 
-import { Menu } from 'lucide-react'
+import { Menu, Database, Settings, Home, Mic } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import React, { useState } from 'react'
+
+import { cn } from '@/lib/utils'
 
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { Button } from './ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from './ui/sheet'
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'Transcribe', href: '/transcribe' },
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Settings', href: '/settings' },
+  { name: 'Home', href: '/', icon: Home },
+  { name: 'Transcribe', href: '/transcribe', icon: Mic },
+  { name: 'Dashboard', href: '/dashboard', icon: Database },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {
@@ -52,15 +56,24 @@ export function Navbar() {
             </span>
           </Link>
           <nav className="flex items-center gap-8 text-base">
-            {navigation.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="transition-colors hover:text-fg/80 text-fg/60 font-medium"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'transition-colors font-medium relative',
+                    isActive ? 'text-fg' : 'text-fg/60 hover:text-fg/80',
+                  )}
+                >
+                  {item.name}
+                  {isActive && (
+                    <span className="absolute -bottom-6 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                  )}
+                </Link>
+              )
+            })}
           </nav>
         </div>
 
@@ -94,16 +107,26 @@ export function Navbar() {
                 <span className="font-bold text-xl">ScriptFlow</span>
               </Link>
               <nav className="flex flex-col gap-4 mt-8">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className="block select-none space-y-1 rounded-md p-4 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-fg focus:bg-accent focus:text-accent-fg text-lg font-medium"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                {navigation.map((item) => {
+                  const isActive = pathname === item.href
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        'flex items-center gap-3 select-none space-y-1 rounded-md p-4 leading-none no-underline outline-none transition-colors text-lg font-medium',
+                        isActive
+                          ? 'bg-accent text-accent-fg'
+                          : 'hover:bg-accent hover:text-accent-fg focus:bg-accent focus:text-accent-fg',
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {item.name}
+                    </Link>
+                  )
+                })}
               </nav>
             </div>
           </SheetContent>
