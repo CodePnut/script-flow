@@ -38,6 +38,11 @@ import {
  */
 interface TranscriptTableProps {
   className?: string
+  data?: any // Server-side data from history API
+  loading?: boolean
+  error?: string | null
+  onPageChange?: (page: number) => void
+  currentPage?: number
 }
 
 /**
@@ -77,9 +82,20 @@ function formatRelativeTime(date: Date): string {
  * - Empty state handling
  * - Smooth animations
  */
-export function TranscriptTable({ className }: TranscriptTableProps) {
+export function TranscriptTable({
+  className,
+  data,
+  loading = false,
+  error = null,
+  onPageChange,
+  currentPage = 1,
+}: TranscriptTableProps) {
   const { history, removeFromHistory } = useHistoryStore()
   const [sorting, setSorting] = useState<SortingState>([])
+
+  // Use server-side data if provided, otherwise fall back to client-side store
+  const useServerData = data !== undefined
+  const items = useServerData ? data?.items || [] : history
 
   // Define table columns
   const columns: ColumnDef<VideoHistoryItem>[] = [
@@ -195,7 +211,7 @@ export function TranscriptTable({ className }: TranscriptTableProps) {
   ]
 
   const table = useReactTable({
-    data: history,
+    data: items,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -205,8 +221,48 @@ export function TranscriptTable({ className }: TranscriptTableProps) {
     },
   })
 
+  // Show loading state
+  if (loading) {
+    return (
+      <Card className={cn('w-full', className)}>
+        <CardHeader>
+          <CardTitle>Your Transcripts</CardTitle>
+          <CardDescription>Loading your transcripts...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-fg">Loading transcripts...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card className={cn('w-full', className)}>
+        <CardHeader>
+          <CardTitle>Your Transcripts</CardTitle>
+          <CardDescription>Error loading transcripts</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <div className="text-destructive">
+              <p className="text-lg font-medium mb-2">
+                Failed to load transcripts
+              </p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   // Show empty state if no history
-  if (history.length === 0) {
+  if (items.length === 0) {
     return (
       <Card className={cn('w-full', className)}>
         <CardHeader>
@@ -236,7 +292,9 @@ export function TranscriptTable({ className }: TranscriptTableProps) {
       <CardHeader>
         <CardTitle>Your Transcripts</CardTitle>
         <CardDescription>
-          {history.length} video{history.length !== 1 ? 's' : ''} transcribed
+          {useServerData
+            ? `${data?.pagination?.total || 0} video${(data?.pagination?.total || 0) !== 1 ? 's' : ''} transcribed`
+            : `${items.length} video${items.length !== 1 ? 's' : ''} transcribed`}
         </CardDescription>
       </CardHeader>
       <CardContent>

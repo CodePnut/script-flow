@@ -2,8 +2,11 @@
 
 import { motion } from 'framer-motion'
 import { Database } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { TranscriptTable } from '@/components/TranscriptTable'
+import { getHistory, handleAPIError } from '@/lib/api'
+import { useToast } from '@/components/ui/use-toast'
 
 // Note: Metadata export is removed since this is now a client component
 // TODO: Move metadata to a parent server component if needed
@@ -14,13 +17,59 @@ import { TranscriptTable } from '@/components/TranscriptTable'
  * Displays user transcript history in a sortable table format
  *
  * Features:
+ * - Server-side paginated data from history API
  * - Sortable table with Title, Date, Duration, Actions columns
  * - Responsive design (table on desktop, cards on mobile)
  * - Empty state handling
  * - Smooth page transitions
  * - Row actions (View, Share, Delete)
+ * - Real-time data fetching with error handling
  */
 export default function DashboardPage() {
+  const [historyData, setHistoryData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const { toast } = useToast()
+
+  /**
+   * Fetch history data from API
+   */
+  const fetchHistory = async (page: number = 1) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const data = await getHistory(page, 10)
+      setHistoryData(data)
+      setCurrentPage(page)
+    } catch (err) {
+      const errorMessage = handleAPIError(err)
+      setError(errorMessage)
+
+      toast({
+        title: 'Error Loading History',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
+   * Load initial data on component mount
+   */
+  useEffect(() => {
+    fetchHistory(1)
+  }, [])
+
+  /**
+   * Handle page changes
+   */
+  const handlePageChange = (page: number) => {
+    fetchHistory(page)
+  }
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -50,7 +99,13 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <TranscriptTable />
+          <TranscriptTable
+            data={historyData}
+            loading={loading}
+            error={error}
+            onPageChange={handlePageChange}
+            currentPage={currentPage}
+          />
         </motion.div>
       </div>
     </div>

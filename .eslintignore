@@ -1,0 +1,24 @@
+# Prisma generated files
+src/generated/
+src/generated/**/*
+
+# Build output
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.production.local
+.env.test.local
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+
+# Storybook
+storybook-static/ 

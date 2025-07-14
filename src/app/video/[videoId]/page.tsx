@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VideoPlayer, type VideoPlayerRef } from '@/components/VideoPlayer'
-import { fetchMockVideoData } from '@/lib/mockData'
+import { getVideo, handleAPIError } from '@/lib/api'
 import type { VideoData } from '@/lib/transcript'
 import { normalizeVideoId } from '@/lib/transcript'
 
@@ -58,7 +58,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
         setLoading(true)
         setError(null)
 
-        const data = await fetchMockVideoData(videoId)
+        const data = await getVideo(videoId)
 
         if (!data) {
           setError('Video not found')
@@ -67,7 +67,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
 
         setVideoData(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load video')
+        setError(handleAPIError(err))
       } finally {
         setLoading(false)
       }

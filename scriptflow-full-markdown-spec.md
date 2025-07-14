@@ -625,3 +625,169 @@ DEFINITION OF DONE
 
 OUTPUT: Exact file diffs only.
 ```
+
+Appendix C – Back‑End Phase‑specific Cursor prompts (precision edition)
+
+How to use: Copy the block for your backend phase into Cursor. Run commands locally (npm run lint && npm run test && npm run build). Merge only when Definition of Done is satisfied.
+
+Backend Phase 0 – Environment & Database Scaffold
+
+You are Cursor AI operating inside the existing Scriptflow repo.
+
+PHASE: Backend 0 — Env & DB setup
+
+GOAL: Add Prisma, PlanetScale connection, and Deepgram API key handling.
+
+TASKS
+
+1. Install deps: `npm install prisma @prisma/client dotenv`.
+2. Initialise Prisma: `npx prisma init --datasource-provider mysql`.
+3. Set `DATABASE_URL` in `.env.example` with PlanetScale placeholder.
+4. Replace generated `schema.prisma` with the User & Transcript models defined in Section 3.3.
+5. Add `prisma/migrate_dev.sh` script for local dev using PlanetScale branch.
+6. Create `lib/prisma.ts` for Singleton Prisma client.
+7. Store `DEEPGRAM_API_KEY` in `.env.example`.
+8. Update README with setup steps.
+
+DEFINITION OF DONE
+
+- `npx prisma validate` passes.
+- `npm run build` compiles without TS errors.
+- `.env.example` lists `DATABASE_URL` and `DEEPGRAM_API_KEY`.
+- New files committed with message `feat(back): scaffold Prisma & env config`.
+
+OUTPUT: Exact file diffs only.
+
+#### Backend Phase 1 – Transcription API Route
+
+```text
+You are Cursor AI in the Scriptflow repo.
+
+PHASE: Backend 1 — /api/transcribe route
+
+GOAL: Implement POST `/api/transcribe` that streams YouTube audio to Deepgram and returns job ID.
+
+TASKS
+1. Install: `npm install ytdl-core @deepgram/sdk`.
+2. Create `/app/api/transcribe/route.ts` with POST handler:
+   - Validate body `{ youtubeUrl }` via Zod.
+   - Stream audio‑only with `ytdl(youtubeUrl,{quality:'highestaudio'})`.
+   - Upload to Deepgram `await deepgram.transcription.preRecorded({stream})` with summarise+diarise.
+   - Persist job in DB (`Transcript` row with `deepgramJob`).
+   - Return `{ id: job.id }`.
+3. Add unit test mocking Deepgram SDK, expect 200 & job.id.
+
+DEFINITION OF DONE
+- Route returns 400 on invalid URL.
+- New transcript row exists in test DB.
+- `npm run test` green; lint passes.
+
+OUTPUT: Exact file diffs only.
+
+Backend Phase 2 – Webhook & Polling
+
+PHASE: Backend 2 — Deepgram webhook & transcript fetch
+
+GOAL: Save completed transcripts and expose GET endpoints.
+
+TASKS
+1. Add `/app/api/webhook/deepgram/route.ts` (POST):
+   - Verify `DG-Signature` header.
+   - Update matching Transcript (`status='completed'`, save `utterances`, `summary`, `chapters`).
+2. Add `/app/api/transcript/[id]/route.ts` (GET): return cached transcript.
+3. Integration tests: mock webhook payload, ensure DB update.
+
+DEFINITION OF DONE
+- Webhook validation passes.
+- GET returns 404 for unknown id, 200 for completed.
+- Tests + lint + build succeed.
+
+PHASE: Backend 3 — Public history listing
+
+GOAL: Provide public, paginated endpoints for transcript history **without requiring authentication**.
+
+WHY THIS MATTERS
+Even without user accounts, front‑end phases 4‑5 rely on an endpoint that can return a list of previously generated transcripts so the dashboard remains functional. The endpoint will query by IP hash to scope history per visitor while preserving privacy.
+
+TASKS
+1. Create util `lib/ipHash.ts` that SHA‑256 hashes `req.headers['x-forwarded-for'] ?? req.socket.remoteAddress`.
+2. Modify Prisma `Transcript` model to include `ipHash String @index`.
+3. Update `/api/transcribe` (Phase 1) to store `ipHash` on creation.
+4. Add `/app/api/history/route.ts` (GET):
+   - Query param `?page=` default 1, 10 per page.
+   - Return `{ items:[...], page, totalPages }` filtered by `ipHash`.
+5. Unit tests: pagination logic (page beyond range returns empty array).
+
+DEFINITION OF DONE
+- Endpoint returns 200 with correct items for first two pages in test DB.
+- Front‑end dashboard (Phase 5) consumes endpoint without modifications.
+- No auth middleware present; all tests green; lint/build pass.
+
+OUTPUT: Exact file diffs only.
+
+PHASE: Backend 3 — Supabase JWT auth & user history
+
+GOAL: Secure routes with Supabase JWT and add `/api/user/history`.
+
+TASKS
+1. Install `npm install @supabase/auth-helpers-nextjs jose`.
+2. Implement `lib/auth.ts` verifying `Authorization: Bearer`.
+3. Wrap protected routes (`history`, future delete) with `requireUser` util.
+4. `/api/user/history` returns paginated Transcript list for user.
+5. Unit test auth util (valid/invalid token).
+
+DEFINITION OF DONE
+- Protected route returns 401 without token.
+- Pagination default 10 per page, query `?page=`.
+
+Backend Phase 4 – Queue, Cron & Cost Guard‑Rails
+
+PHASE: Backend 4 — Upstash Redis queue & Vercel Cron
+
+GOAL: Offload long Deepgram jobs and enforce video length limit.
+
+TASKS
+1. Install `npm install ioredis`.
+2. Add `lib/queue.ts` for enqueue/run worker with Upstash.
+3. Move Deepgram upload logic into queue worker (Edge Function).
+4. Enforce max 60 min video length unless header `X-Allow-Long: true`.
+5. Create `vercel.json` for scheduler running cleanup cron daily.
+
+DEFINITION OF DONE
+- Jobs > 5 min audio are queued, shorter handled inline.
+- Cron deletes transcripts > 90 days.
+
+Backend Phase 5 – Observability & Error Handling
+
+PHASE: Backend 5 — Sentry & health endpoint
+
+GOAL: Add structured logging, Sentry tracing, and `/api/health`.
+
+TASKS
+1. Install `npm install @sentry/nextjs`.
+2. Initialise Sentry in `sentry.server.config.ts`.
+3. Wrap API handlers with try/catch → `Sentry.captureException`.
+4. `/api/health` returns JSON `{ db:true, redis:true, deepgram:true }`.
+5. Playwright test ensures 200 OK health.
+
+DEFINITION OF DONE
+- Errors captured in Sentry during test throw.
+- Health endpoint green in CI.
+
+
+Backend Phase 6 – Deployment & Docs
+PHASE: Backend 6 — Final deploy & README
+
+GOAL: Deploy to Vercel prod, document env variables & local dev.
+
+TASKS
+1. Set Vercel env vars: `DATABASE_URL`, `DEEPGRAM_API_KEY`, `SUPABASE_JWT_SECRET`, `UPSTASH_REDIS_REST_URL`, etc.
+2. Push `vercel --prod`.
+3. Update README: setup, scripts, env example, architecture diagram.
+4. Lighthouse Serverless function cold start check (< 1 s).
+
+DEFINITION OF DONE
+- Vercel deployment green.
+- README “Getting Started” works on fresh clone.
+- All tests & lint pass in CI.
+```

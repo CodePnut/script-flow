@@ -9,7 +9,7 @@ import { RecentVideos } from '@/components/RecentVideos'
 import { useToast } from '@/components/ui/use-toast'
 import { URLForm } from '@/components/URLForm'
 import { useHistoryStore } from '@/hooks/useHistoryStore'
-import { simulateTranscription } from '@/lib/transcription'
+import { startTranscription, handleAPIError } from '@/lib/api'
 import { parseYouTubeUrl } from '@/lib/youtube'
 
 /**
@@ -66,29 +66,19 @@ export default function TranscribePage() {
         variant: 'default',
       })
 
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 95) {
-            clearInterval(progressInterval)
-            return prev
-          }
-          return prev + Math.random() * 10
-        })
-      }, 200)
+      // Start real transcription with progress updates
+      const result = await startTranscription(url, {
+        onProgress: (progress) => setProgress(progress),
+      })
 
-      // Simulate transcription
-      const result = await simulateTranscription(url)
-
-      // Clear progress interval and set complete
-      clearInterval(progressInterval)
+      // Set complete progress
       setProgress(100)
 
       // Add to history
       addToHistory({
         videoId: result.videoId,
         title: result.title,
-        url: result.url,
+        url: url,
       })
 
       // Show success toast
@@ -108,10 +98,11 @@ export default function TranscribePage() {
       // Handle errors
       console.error('Transcription error:', error)
 
+      const errorMessage = handleAPIError(error)
+
       toast({
         title: 'Transcription Failed',
-        description:
-          'An error occurred while processing your video. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       })
 
