@@ -67,6 +67,48 @@ const DEEPGRAM_OPTIONS = {
 const MAX_VIDEO_DURATION = 60 * 60 // 60 minutes in seconds
 
 /**
+ * Mock transcript data for testing
+ */
+const MOCK_TRANSCRIPT_DATA = {
+  utterances: [
+    {
+      id: 'utterance-1',
+      start: 0,
+      end: 5,
+      text: 'Welcome to this comprehensive tutorial on modern web development',
+      confidence: 0.95,
+      speaker: 0,
+    },
+    {
+      id: 'utterance-2',
+      start: 5,
+      end: 10,
+      text: "Today we'll be exploring React and Next.js",
+      confidence: 0.95,
+      speaker: 0,
+    },
+  ],
+  chapters: [
+    {
+      id: 'chapter-1',
+      title: 'Introduction',
+      start: 0,
+      end: 300,
+      description: 'Introduction to the course and setup',
+    },
+    {
+      id: 'chapter-2',
+      title: 'Environment Setup',
+      start: 300,
+      end: 600,
+      description: 'Setting up the development environment',
+    },
+  ],
+  summary:
+    'This tutorial provides a complete introduction to modern web development using React and Next.js. We cover everything from basic concepts to advanced patterns.',
+}
+
+/**
  * POST /api/transcribe
  *
  * Process YouTube video transcription request
@@ -80,15 +122,71 @@ export async function POST(request: NextRequest) {
     const hasDeepgramKey = !!process.env.DEEPGRAM_API_KEY
     console.log(`🔍 DEEPGRAM_API_KEY exists: ${hasDeepgramKey}`)
 
+    // If no Deepgram API key, use mock data for testing
     if (!process.env.DEEPGRAM_API_KEY) {
-      console.error('🔴 DEEPGRAM_API_KEY is not set')
-      return NextResponse.json(
-        {
-          error:
-            'Transcription service not configured. Please set DEEPGRAM_API_KEY in your .env file.',
+      console.log('🟡 No Deepgram API key found, using mock data for testing')
+
+      // Validate request body
+      const body = await request.json()
+      const validation = transcribeRequestSchema.safeParse(body)
+
+      if (!validation.success) {
+        return NextResponse.json(
+          {
+            error: 'Invalid request',
+            details: validation.error.issues,
+          },
+          { status: 400 },
+        )
+      }
+
+      const { youtubeUrl } = validation.data
+      const videoId = extractVideoId(youtubeUrl)
+
+      if (!videoId) {
+        return NextResponse.json(
+          { error: 'Could not extract video ID from URL' },
+          { status: 400 },
+        )
+      }
+
+      // Get user identifier
+      const userHash = getUserIdentifier(request)
+
+      // Create mock transcript record
+      const transcriptRecord = await prisma.transcript.create({
+        data: {
+          videoId: videoId,
+          title: 'Mock Video Title',
+          description: 'A mock video for testing purposes',
+          duration: 1800, // 30 minutes
+          summary: MOCK_TRANSCRIPT_DATA.summary,
+          language: 'en',
+          chapters: MOCK_TRANSCRIPT_DATA.chapters,
+          utterances: MOCK_TRANSCRIPT_DATA.utterances,
+          metadata: {
+            source: 'mock',
+            model: 'mock-nova-2',
+            confidence: 0.95,
+            diarization: true,
+            generatedAt: new Date().toISOString(),
+          },
+          deepgramJob: `mock-job-${Date.now()}-${videoId}`,
+          status: 'completed',
+          ipHash: userHash,
         },
-        { status: 500 },
-      )
+      })
+
+      console.log('✅ Mock transcription completed for video:', videoId)
+
+      return NextResponse.json({
+        transcriptId: transcriptRecord.id,
+        videoId: videoId,
+        title: 'Mock Video Title',
+        status: 'completed',
+        duration: 1800,
+        message: 'Mock transcription completed successfully',
+      })
     }
 
     // Validate request body

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Clock, Play, User } from 'lucide-react'
+import { Clock, Play, User, ScrollText, PauseCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { TranscriptSegment } from '@/lib/transcript'
@@ -162,6 +162,10 @@ export function TranscriptViewer({
   const [activeSegment, setActiveSegment] = useState<TranscriptSegment | null>(
     null,
   )
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(autoScroll)
+  const [userScrollTimeout, setUserScrollTimeout] =
+    useState<NodeJS.Timeout | null>(null)
+  const isUserScrollingRef = useRef(false)
 
   // Find active segment based on current time
   useEffect(() => {
@@ -169,9 +173,51 @@ export function TranscriptViewer({
     setActiveSegment(active)
   }, [segments, currentTime])
 
-  // Auto-scroll to active segment
+  // Handle user scroll detection
   useEffect(() => {
-    if (autoScroll && activeSegment && containerRef.current) {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      // If user is manually scrolling, disable auto-scroll temporarily
+      if (!isUserScrollingRef.current) {
+        setIsAutoScrollEnabled(false)
+        isUserScrollingRef.current = true
+
+        // Clear existing timeout
+        if (userScrollTimeout) {
+          clearTimeout(userScrollTimeout)
+        }
+
+        // Re-enable auto-scroll after 3 seconds of no scrolling
+        const timeout = setTimeout(() => {
+          setIsAutoScrollEnabled(true)
+          isUserScrollingRef.current = false
+        }, 3000)
+
+        setUserScrollTimeout(timeout)
+      }
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      if (userScrollTimeout) {
+        clearTimeout(userScrollTimeout)
+      }
+    }
+  }, [userScrollTimeout])
+
+  // Auto-scroll to active segment (only when enabled and not user-scrolling)
+  useEffect(() => {
+    if (
+      autoScroll &&
+      isAutoScrollEnabled &&
+      activeSegment &&
+      containerRef.current &&
+      !isUserScrollingRef.current
+    ) {
       const activeElement = containerRef.current.querySelector(
         `[data-segment-id="${activeSegment.id}"]`,
       )
@@ -183,7 +229,7 @@ export function TranscriptViewer({
         })
       }
     }
-  }, [activeSegment, autoScroll])
+  }, [activeSegment, autoScroll, isAutoScrollEnabled])
 
   // Group segments into paragraphs for better readability
   const paragraphs = groupSegmentsIntoParagraphs(segments, maxParagraphLength)
@@ -212,13 +258,40 @@ export function TranscriptViewer({
   return (
     <Card className={cn('h-full', className)}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Interactive Transcript
-        </CardTitle>
-        <p className="text-sm text-muted-fg">
-          Click any text to jump to that moment in the video
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Interactive Transcript
+            </CardTitle>
+            <p className="text-sm text-muted-fg">
+              Click any text to jump to that moment in the video
+            </p>
+          </div>
+
+          {/* Auto-scroll status indicator */}
+          <div className="flex items-center gap-2 text-xs">
+            {isAutoScrollEnabled ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-1 text-green-600 dark:text-green-400"
+              >
+                <ScrollText className="h-3 w-3" />
+                <span>Auto-scroll</span>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
+              >
+                <PauseCircle className="h-3 w-3" />
+                <span>Scroll paused</span>
+              </motion.div>
+            )}
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent>

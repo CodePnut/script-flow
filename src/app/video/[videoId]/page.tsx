@@ -1,7 +1,18 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowLeft, ExternalLink, Share2, AlertCircle } from 'lucide-react'
+import {
+  ArrowLeft,
+  ExternalLink,
+  Share2,
+  AlertCircle,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { useEffect, useRef, useState, use } from 'react'
@@ -49,6 +60,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showControls, setShowControls] = useState(true)
 
   /**
    * Load video data on mount
@@ -88,6 +100,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
    * Handle timestamp clicks from transcript/chapters
    */
   const handleTimestampClick = (seconds: number) => {
+    console.log('VideoViewer - Timestamp clicked:', seconds)
     if (!videoPlayerRef.current) {
       console.error('VideoViewer - videoPlayerRef.current is null!')
       return
@@ -101,6 +114,50 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
    */
   const handlePlay = () => setIsPlaying(true)
   const handlePause = () => setIsPlaying(false)
+
+  /**
+   * Video control functions
+   */
+  const togglePlayPause = () => {
+    if (!videoPlayerRef.current) {
+      console.warn('Video player ref not available')
+      return
+    }
+
+    try {
+      // Since react-youtube doesn't expose play/pause directly,
+      // we'll use the internal player
+      const internalPlayer = videoPlayerRef.current.getInternalPlayer() as any
+      if (
+        internalPlayer &&
+        typeof internalPlayer.pauseVideo === 'function' &&
+        typeof internalPlayer.playVideo === 'function'
+      ) {
+        if (isPlaying) {
+          internalPlayer.pauseVideo()
+        } else {
+          internalPlayer.playVideo()
+        }
+      } else {
+        console.warn('Internal player not ready or missing methods')
+      }
+    } catch (error) {
+      console.error('Error toggling play/pause:', error)
+    }
+  }
+
+  const seekBackward = () => {
+    if (!videoPlayerRef.current) return
+    const newTime = Math.max(0, currentTime - 10)
+    videoPlayerRef.current.seekTo(newTime)
+  }
+
+  const seekForward = () => {
+    if (!videoPlayerRef.current) return
+    const duration = videoPlayerRef.current.getDuration()
+    const newTime = Math.min(duration, currentTime + 10)
+    videoPlayerRef.current.seekTo(newTime)
+  }
 
   /**
    * Share video functionality
@@ -223,15 +280,76 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
           >
             <div className="space-y-6">
               {/* Video player */}
-              <VideoPlayer
-                ref={videoPlayerRef}
-                videoId={videoId}
-                onProgress={handleProgress}
-                onPlay={handlePlay}
-                onPause={handlePause}
-                playing={isPlaying}
-                className="w-full"
-              />
+              <div className="relative">
+                <VideoPlayer
+                  ref={videoPlayerRef}
+                  videoId={videoId}
+                  onProgress={handleProgress}
+                  onPlay={handlePlay}
+                  onPause={handlePause}
+                  playing={isPlaying}
+                  className="w-full"
+                />
+
+                {/* Custom video controls overlay */}
+                {showControls && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={seekBackward}
+                          className="text-white hover:bg-white/20"
+                        >
+                          <SkipBack className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={togglePlayPause}
+                          className="text-white hover:bg-white/20"
+                        >
+                          {isPlaying ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={seekForward}
+                          className="text-white hover:bg-white/20"
+                        >
+                          <SkipForward className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowControls(!showControls)}
+                          className="text-white hover:bg-white/20"
+                        >
+                          {showControls ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
 
               {/* Video metadata */}
               <Card>
@@ -262,6 +380,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                 segments={videoData.transcript}
                 currentTime={currentTime}
                 onTimestampClick={handleTimestampClick}
+                maxParagraphLength={300}
               />
             </div>
           </motion.div>
@@ -276,9 +395,19 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
             <div className="space-y-6">
               {/* Summary and chapters tabs */}
               <Tabs defaultValue="summary" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="summary">Summary</TabsTrigger>
-                  <TabsTrigger value="chapters">Chapters</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1">
+                  <TabsTrigger
+                    value="summary"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+                  >
+                    📊 Summary
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="chapters"
+                    className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+                  >
+                    📖 Chapters
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="summary" className="mt-6">

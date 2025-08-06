@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { useHistoryStore, type VideoHistoryItem } from '@/hooks/useHistoryStore'
+import { deleteTranscript } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 import { Button } from './ui/button'
@@ -24,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from './ui/card'
+import { useToast } from './ui/use-toast'
 import {
   Table,
   TableBody,
@@ -125,6 +127,50 @@ export function TranscriptTable({
 }: TranscriptTableProps) {
   const { history, removeFromHistory } = useHistoryStore()
   const [sorting, setSorting] = useState<SortingState>([])
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+  const { toast } = useToast()
+
+  // Handle delete transcript
+  const handleDelete = async (transcriptId: string, title: string) => {
+    if (deletingIds.has(transcriptId)) return // Prevent double-clicks
+
+    setDeletingIds((prev) => new Set([...prev, transcriptId]))
+
+    try {
+      await deleteTranscript(transcriptId)
+
+      // Remove from client-side store if using it
+      if (!useServerData) {
+        removeFromHistory(transcriptId)
+      }
+
+      toast({
+        title: 'Transcript Deleted',
+        description: `"${title}" has been deleted successfully.`,
+      })
+
+      // Refresh data if using server-side data
+      if (useServerData && onPageChange) {
+        onPageChange(currentPage)
+      }
+    } catch (error) {
+      console.error('Failed to delete transcript:', error)
+      toast({
+        title: 'Delete Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete transcript',
+        variant: 'destructive',
+      })
+    } finally {
+      setDeletingIds((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(transcriptId)
+        return newSet
+      })
+    }
+  }
 
   // Use server-side data if provided, otherwise fall back to client-side store
   const useServerData = data !== undefined
@@ -185,12 +231,19 @@ export function TranscriptTable({
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: () => (
-        <div className="text-muted-fg">
-          {formatDuration(180)} {/* Estimated 3 minutes */}
-        </div>
-      ),
-      sortingFn: () => 0, // Basic sorting since all durations are estimated the same
+      cell: ({ row }) => {
+        const duration = row.getValue('duration') as number
+        return (
+          <div className="text-muted-fg">
+            {duration ? formatDuration(duration) : 'Unknown'}
+          </div>
+        )
+      },
+      sortingFn: (rowA, rowB) => {
+        const durationA = (rowA.getValue('duration') as number) || 0
+        const durationB = (rowB.getValue('duration') as number) || 0
+        return durationA - durationB
+      },
     },
     {
       id: 'actions',
@@ -240,8 +293,9 @@ export function TranscriptTable({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => removeFromHistory(video.id)}
-              className="text-destructive hover:text-destructive"
+              onClick={() => handleDelete(video.id, video.title)}
+              disabled={deletingIds.has(video.id)}
+              className="text-destructive hover:text-destructive disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

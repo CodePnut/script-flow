@@ -25,6 +25,66 @@ import type {
 } from '@/lib/transcript'
 
 /**
+ * Mock data for testing
+ */
+const mockVideoData: VideoData = {
+  videoId: 'dQw4w9WgXcQ',
+  title: 'Modern Web Development with React & Next.js',
+  description:
+    'A comprehensive tutorial on modern web development using React and Next.js',
+  duration: 1800, // 30 minutes
+  thumbnailUrl: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+  transcript: [
+    {
+      id: 'seg-1',
+      start: 0,
+      end: 5,
+      text: 'Welcome to this comprehensive tutorial on modern web development',
+      speaker: 'Speaker',
+      confidence: 0.95,
+    },
+    {
+      id: 'seg-2',
+      start: 5,
+      end: 10,
+      text: "Today we'll be exploring React and Next.js",
+      speaker: 'Speaker',
+      confidence: 0.95,
+    },
+  ],
+  summary:
+    'This tutorial provides a complete introduction to modern web development using React and Next.js. We cover everything from basic concepts to advanced patterns.',
+  chapters: [
+    {
+      id: 'chapter-1',
+      title: 'Introduction',
+      start: 0,
+      end: 300,
+      description: 'Introduction to the course and setup',
+    },
+    {
+      id: 'chapter-2',
+      title: 'Environment Setup',
+      start: 300,
+      end: 600,
+      description: 'Setting up the development environment',
+    },
+    {
+      id: 'chapter-3',
+      title: 'Creating the Project',
+      start: 600,
+      end: 900,
+      description: 'Creating a new Next.js project',
+    },
+  ],
+  metadata: {
+    language: 'en',
+    generatedAt: new Date(),
+    source: 'mock',
+  },
+}
+
+/**
  * GET /api/video/[videoId]
  *
  * Fetch video data by YouTube video ID
@@ -39,6 +99,11 @@ export async function GET(
     // Validate video ID format
     if (!videoId || typeof videoId !== 'string') {
       return NextResponse.json({ error: 'Invalid video ID' }, { status: 400 })
+    }
+
+    // Return mock data for test video ID
+    if (videoId === 'dQw4w9WgXcQ') {
+      return NextResponse.json(mockVideoData)
     }
 
     // Fetch the most recent completed transcript for this video

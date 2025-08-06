@@ -65,7 +65,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+  const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const url = `${baseURL}${endpoint}`
 
   try {
@@ -162,15 +162,15 @@ export async function startTranscription(
   let progressInterval: NodeJS.Timeout | null = null
   if (onProgress) {
     let currentProgress = 0
-    const progressIncrement = 2 // Increment by 2% every 500ms
-    const maxProgress = 95 // Don't go to 100% until actual completion
+    const progressIncrement = 3 // Increment by 3% every 300ms for faster feedback
+    const maxProgress = 90 // Don't go to 100% until actual completion
 
     progressInterval = setInterval(() => {
       if (currentProgress < maxProgress) {
         currentProgress += progressIncrement
         onProgress(Math.min(currentProgress, maxProgress))
       }
-    }, 500)
+    }, 300)
   }
 
   try {
@@ -362,8 +362,21 @@ export function isTranscriptionError(
  * Configuration constants
  */
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
+  BASE_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   TIMEOUT: 30000, // 30 seconds
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second
 } as const
+
+/**
+ * Delete a transcript by ID
+ */
+export async function deleteTranscript(transcriptId: string): Promise<void> {
+  const response = await apiRequest(`/api/transcript/${transcriptId}/delete`, {
+    method: 'DELETE',
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to delete transcript')
+  }
+}

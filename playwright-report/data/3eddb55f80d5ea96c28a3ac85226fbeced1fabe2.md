@@ -1,0 +1,44 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - link "ScriptFlow Logo ScriptFlow":
+    - /url: /
+    - img "ScriptFlow Logo"
+    - text: ScriptFlow
+  - navigation:
+    - link "Home":
+      - /url: /
+    - link "Transcribe":
+      - /url: /transcribe
+    - link "Dashboard":
+      - /url: /dashboard
+    - link "Settings":
+      - /url: /settings
+  - navigation:
+    - button "Switch to light mode": Toggle theme
+- main:
+  - main:
+    - heading "Summaris | YouTube Videos" [level=1]
+    - paragraph: Transform any YouTube video into interactive, searchable transcripts with AI-powered summaries and chapter navigation.
+    - link "Get Started":
+      - /url: /transcribe
+    - paragraph: No sign-up required • Free to use • Powered by AI
+    - heading "Transform Your Video Experience" [level=2]
+    - paragraph: Unlock the full potential of YouTube content with our AI-powered transcription and analysis tools.
+    - text: Instant Transcription Convert any YouTube video into accurate, searchable text transcripts powered by advanced AI technology. Smart Search Find specific moments in videos instantly with intelligent search that understands context and meaning. AI Summaries Get concise summaries and key takeaways from long videos, saving you time and improving comprehension.
+    - heading "Ready to Get Started?" [level=2]
+    - paragraph: Paste a YouTube URL below and experience the future of video content analysis.
+    - text: YouTube URL
+    - textbox "https://www.youtube.com/watch?v=..."
+    - button "Transcribe"
+    - paragraph: Enter a YouTube video URL to generate an interactive transcript
+    - paragraph: Please enter a YouTube URL
+    - heading "Why Choose Script Flow?" [level=2]
+    - text: Lightning Fast Advanced processing engines deliver transcripts in seconds, not minutes. Interactive Player Navigate through videos with timestamp-synced transcripts and seamless playback. Time Stamps Every line of text is linked to the exact moment in the video for precise navigation.
+- region "Notifications (F8)":
+  - list
+- alert
+- button "Open Next.js Dev Tools":
+  - img
+```

@@ -24,9 +24,9 @@ const formSchema = z.object({
     .string()
     .min(1, 'Please enter a YouTube URL')
     .refine((url) => {
-      // YouTube URL patterns
+      // YouTube URL patterns - more flexible
       const youtubeRegex =
-        /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)[a-zA-Z0-9_-]{11}$/
+        /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)[a-zA-Z0-9_-]{11}/
       return youtubeRegex.test(url)
     }, 'Please enter a valid YouTube URL'),
 })
@@ -44,9 +44,11 @@ export function URLForm({ onSubmit, className }: URLFormProps) {
     defaultValues: {
       url: '',
     },
+    mode: 'onSubmit',
   })
 
   async function handleSubmit(values: z.infer<typeof formSchema>) {
+    console.log('Form submitted with values:', values)
     setIsLoading(true)
 
     try {
@@ -74,7 +76,15 @@ export function URLForm({ onSubmit, className }: URLFormProps) {
       transition={{ duration: 0.6 }}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form
+          onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+            console.log('Form validation errors:', errors)
+          })}
+          onInvalid={(e) => {
+            console.log('Form invalid event:', e)
+          }}
+          className="space-y-6"
+        >
           <FormField
             control={form.control}
             name="url"

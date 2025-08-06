@@ -96,12 +96,16 @@ export function groupSegmentsIntoParagraphs(
   let currentLength = 0
 
   for (const segment of segments) {
-    // Start new paragraph if current one is too long or speaker changes
+    // Start new paragraph if current one is too long, speaker changes, or time gap is large
+    const lastSegment = currentParagraph[currentParagraph.length - 1]
+    const timeGap = lastSegment ? segment.start - lastSegment.end : 0
+
     const shouldStartNew =
       currentLength + segment.text.length > maxParagraphLength ||
       (currentParagraph.length > 0 &&
         currentParagraph[currentParagraph.length - 1].speaker !==
-          segment.speaker)
+          segment.speaker) ||
+      timeGap > 2 // Start new paragraph if there's a 2+ second gap
 
     if (shouldStartNew && currentParagraph.length > 0) {
       paragraphs.push(currentParagraph)

@@ -8,6 +8,9 @@ import {
   Lightbulb,
   User,
   Calendar,
+  Download,
+  Share2,
+  RefreshCw,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -15,6 +18,7 @@ import { cn, formatDate } from '@/lib/utils'
 
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { useToast } from './ui/use-toast'
 
 /**
  * SummaryCard component props interface
@@ -36,6 +40,12 @@ interface SummaryCardProps {
   showMetadata?: boolean
   /** Whether to show copy button */
   showCopyButton?: boolean
+  /** Callback for export functionality */
+  onExport?: () => void
+  /** Callback for share functionality */
+  onShare?: () => void
+  /** Callback for regenerate functionality */
+  onRegenerate?: () => void
 }
 
 /**
@@ -93,9 +103,14 @@ export function SummaryCard({
   className,
   showMetadata = true,
   showCopyButton = true,
+  onExport,
+  onShare,
+  onRegenerate,
 }: SummaryCardProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
+  const { toast } = useToast()
 
   // Extract key points from summary
   const keyPoints = extractKeyPoints(summary)
@@ -115,6 +130,102 @@ export function SummaryCard({
       setTimeout(() => setIsCopied(false), 2000)
     } catch (error) {
       console.error('Failed to copy summary:', error)
+    }
+  }
+
+  // Handle export functionality
+  const handleExport = () => {
+    if (onExport) {
+      onExport()
+    } else {
+      // Default export functionality
+      const exportData = {
+        title: metadata?.title || 'Video Summary',
+        summary,
+        keyPoints,
+        metadata,
+        exportedAt: new Date().toISOString(),
+      }
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${metadata?.title?.replace(/[^a-z0-9]/gi, '_') || 'summary'}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: 'Summary Exported',
+        description: 'Summary has been downloaded as a JSON file.',
+      })
+    }
+  }
+
+  // Handle share functionality
+  const handleShare = async () => {
+    if (onShare) {
+      onShare()
+    } else {
+      // Default share functionality
+      const shareText = `${metadata?.title || 'Video Summary'}\n\n${summary}`
+
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: metadata?.title || 'Video Summary',
+            text: shareText,
+            url: window.location.href,
+          })
+        } else {
+          // Fallback to clipboard
+          await navigator.clipboard.writeText(shareText)
+          toast({
+            title: 'Summary Copied',
+            description: 'Summary has been copied to clipboard.',
+          })
+        }
+      } catch (error) {
+        console.error('Failed to share summary:', error)
+        toast({
+          title: 'Share Failed',
+          description: 'Could not share the summary. Please try again.',
+          variant: 'destructive',
+        })
+      }
+    }
+  }
+
+  // Handle regenerate functionality
+  const handleRegenerate = async () => {
+    if (onRegenerate) {
+      setIsRegenerating(true)
+      try {
+        await onRegenerate()
+        toast({
+          title: 'Summary Regenerated',
+          description: 'A new summary has been generated.',
+        })
+      } catch (error) {
+        toast({
+          title: 'Regeneration Failed',
+          description: 'Could not regenerate summary. Please try again.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsRegenerating(false)
+      }
+    } else {
+      // Show not implemented message
+      toast({
+        title: 'Feature Not Available',
+        description: 'Summary regeneration is not implemented yet.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -254,15 +365,36 @@ export function SummaryCard({
           transition={{ duration: 0.5, delay: 0.5 }}
           className="flex flex-wrap gap-2 pt-2"
         >
-          <Button variant="outline" size="sm" className="text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={handleExport}
+          >
+            <Download className="h-3 w-3 mr-1" />
             Export Summary
           </Button>
 
-          <Button variant="outline" size="sm" className="text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={handleShare}
+          >
+            <Share2 className="h-3 w-3 mr-1" />
             Share
           </Button>
 
-          <Button variant="outline" size="sm" className="text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={handleRegenerate}
+            disabled={isRegenerating}
+          >
+            <RefreshCw
+              className={cn('h-3 w-3 mr-1', isRegenerating && 'animate-spin')}
+            />
             Regenerate
           </Button>
         </motion.div>

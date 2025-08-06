@@ -12,8 +12,10 @@ test.describe('Landing Page', () => {
     // Check if the typewriter text is visible
     await expect(page.locator('h1')).toContainText('YouTube Videos')
 
-    // Check if the Get Started button is visible
-    await expect(page.locator('text=Get Started')).toBeVisible()
+    // Check if the Get Started button is visible (use more specific selector)
+    await expect(
+      page.getByRole('link', { name: 'Get Started' }).first(),
+    ).toBeVisible()
   })
 
   test('should display feature cards', async ({ page }) => {
@@ -42,7 +44,7 @@ test.describe('Landing Page', () => {
 
     // Check for validation error message
     await expect(
-      page.locator('text=Please enter a valid YouTube URL'),
+      page.getByText('Please enter a valid YouTube URL'),
     ).toBeVisible()
   })
 
@@ -53,7 +55,7 @@ test.describe('Landing Page', () => {
     await page.locator('button[type="submit"]').click()
 
     // Check for validation error message
-    await expect(page.locator('text=Please enter a YouTube URL')).toBeVisible()
+    await expect(page.getByText('Please enter a YouTube URL')).toBeVisible()
   })
 
   test('should accept valid YouTube URLs', async ({ page }) => {
@@ -71,11 +73,11 @@ test.describe('Landing Page', () => {
 
     // Should not show validation error
     await expect(
-      page.locator('text=Please enter a valid YouTube URL'),
+      page.getByText('Please enter a valid YouTube URL'),
     ).not.toBeVisible()
 
     // Should show processing state
-    await expect(page.locator('text=Processing...')).toBeVisible()
+    await expect(page.getByText('Processing...')).toBeVisible()
   })
 
   test('should be responsive on mobile', async ({ page }) => {

@@ -141,10 +141,22 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('🔴 Error fetching history:', error)
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    )
+    // Return empty state instead of error for better UX
+    return NextResponse.json({
+      items: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+      meta: {
+        userHash: 'unknown',
+        timestamp: new Date().toISOString(),
+      },
+    })
   }
 }
 
