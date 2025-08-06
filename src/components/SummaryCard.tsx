@@ -210,7 +210,7 @@ export function SummaryCard({
           title: 'Summary Regenerated',
           description: 'A new summary has been generated.',
         })
-      } catch (error) {
+      } catch {
         toast({
           title: 'Regeneration Failed',
           description: 'Could not regenerate summary. Please try again.',

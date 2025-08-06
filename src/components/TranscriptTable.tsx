@@ -25,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from './ui/card'
-import { useToast } from './ui/use-toast'
 import {
   Table,
   TableBody,
@@ -34,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table'
+import { useToast } from './ui/use-toast'
 
 /**
  * Extended video history item for API responses
@@ -122,8 +122,8 @@ export function TranscriptTable({
   data,
   loading = false,
   error = null,
-  onPageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
-  currentPage = 1, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onPageChange,
+  currentPage = 1,
 }: TranscriptTableProps) {
   const { history, removeFromHistory } = useHistoryStore()
   const [sorting, setSorting] = useState<SortingState>([])

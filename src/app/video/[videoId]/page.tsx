@@ -127,7 +127,10 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
     try {
       // Since react-youtube doesn't expose play/pause directly,
       // we'll use the internal player
-      const internalPlayer = videoPlayerRef.current.getInternalPlayer() as any
+      const internalPlayer = videoPlayerRef.current.getInternalPlayer() as {
+        pauseVideo?: () => void
+        playVideo?: () => void
+      }
       if (
         internalPlayer &&
         typeof internalPlayer.pauseVideo === 'function' &&
@@ -172,6 +175,27 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
     } catch {
       // Fallback to clipboard
       await navigator.clipboard.writeText(window.location.href)
+    }
+  }
+
+  /**
+   * Regenerate summary functionality
+   */
+  const handleRegenerateSummary = async () => {
+    if (!videoData) return
+
+    try {
+      // For now, we'll simulate regeneration by adding a timestamp
+      // In a real implementation, this would call an API to regenerate the summary
+      const newSummary = `${videoData.summary}\n\n[Regenerated at ${new Date().toLocaleTimeString()}]`
+
+      setVideoData({
+        ...videoData,
+        summary: newSummary,
+      })
+    } catch (error) {
+      console.error('Failed to regenerate summary:', error)
+      throw error
     }
   }
 
@@ -420,6 +444,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                       source: videoData.metadata.source,
                       language: videoData.metadata.language,
                     }}
+                    onRegenerate={handleRegenerateSummary}
                   />
                 </TabsContent>
 

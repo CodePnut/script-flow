@@ -173,7 +173,7 @@ export function TranscriptViewer({
     setActiveSegment(active)
   }, [segments, currentTime])
 
-  // Handle user scroll detection
+  // Handle user scroll detection (both inside transcript and page-wide)
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -189,20 +189,43 @@ export function TranscriptViewer({
           clearTimeout(userScrollTimeout)
         }
 
-        // Re-enable auto-scroll after 3 seconds of no scrolling
+        // Re-enable auto-scroll after 10 seconds of no scrolling
         const timeout = setTimeout(() => {
           setIsAutoScrollEnabled(true)
           isUserScrollingRef.current = false
-        }, 3000)
+        }, 10000)
 
         setUserScrollTimeout(timeout)
       }
     }
 
+    // Handle scrolling outside the transcript (page-wide scrolling)
+    const handlePageScroll = () => {
+      // Same logic as container scroll
+      if (!isUserScrollingRef.current) {
+        setIsAutoScrollEnabled(false)
+        isUserScrollingRef.current = true
+
+        if (userScrollTimeout) {
+          clearTimeout(userScrollTimeout)
+        }
+
+        const timeout = setTimeout(() => {
+          setIsAutoScrollEnabled(true)
+          isUserScrollingRef.current = false
+        }, 10000)
+
+        setUserScrollTimeout(timeout)
+      }
+    }
+
+    // Add listeners for both transcript container and page
     container.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('scroll', handlePageScroll, { passive: true })
 
     return () => {
       container.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handlePageScroll)
       if (userScrollTimeout) {
         clearTimeout(userScrollTimeout)
       }
@@ -267,6 +290,11 @@ export function TranscriptViewer({
             <p className="text-sm text-muted-fg">
               Click any text to jump to that moment in the video
             </p>
+            {!isAutoScrollEnabled && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Auto-scroll resumes in 10s after scrolling stops
+              </p>
+            )}
           </div>
 
           {/* Auto-scroll status indicator */}

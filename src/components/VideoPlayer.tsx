@@ -184,12 +184,21 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }))
 
     // Handle player ready
-    const handleReady = (event: any) => {
+    const handleReady = (event: { target: unknown }) => {
       console.log('YouTube player ready')
       const player = event.target
 
+      // Type the player properly
+      const typedPlayer = player as {
+        seekTo?: (seconds: number, allowSeekAhead?: boolean) => void
+        getCurrentTime?: () => number
+        getDuration?: () => number
+        setVolume?: (volume: number) => void
+        setPlaybackRate?: (rate: number) => void
+      }
+
       // Validate that the player has the required methods
-      if (!player || typeof player.seekTo !== 'function') {
+      if (!typedPlayer || typeof typedPlayer.seekTo !== 'function') {
         console.error('YouTube player is not properly initialized')
         setPlayerError('YouTube player initialization failed')
         return
@@ -200,25 +209,25 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         internalPlayer: player,
         getCurrentTime: () => {
           try {
-            return player.getCurrentTime() || 0
-          } catch (error) {
-            console.warn('getCurrentTime error:', error)
+            return typedPlayer.getCurrentTime?.() || 0
+          } catch {
+            console.warn('getCurrentTime error')
             return 0
           }
         },
         getDuration: () => {
           try {
-            return player.getDuration() || 0
-          } catch (error) {
-            console.warn('getDuration error:', error)
+            return typedPlayer.getDuration?.() || 0
+          } catch {
+            console.warn('getDuration error')
             return 0
           }
         },
         seekTo: (seconds: number) => {
           try {
-            return player.seekTo(seconds, true)
-          } catch (error) {
-            console.warn('seekTo error:', error)
+            return typedPlayer.seekTo?.(seconds, true)
+          } catch {
+            console.warn('seekTo error')
           }
         },
       }
@@ -229,13 +238,13 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       // Set initial volume and playback rate
       try {
         if (volume !== undefined) {
-          player.setVolume(volume * 100)
+          typedPlayer.setVolume?.(volume * 100)
         }
         if (playbackRate !== undefined) {
-          player.setPlaybackRate(playbackRate)
+          typedPlayer.setPlaybackRate?.(playbackRate)
         }
-      } catch (error) {
-        console.error('VideoPlayer - Error setting initial properties:', error)
+      } catch {
+        console.error('VideoPlayer - Error setting initial properties')
       }
 
       // Start progress tracking
@@ -245,7 +254,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
             try {
               const currentTime = youtubeRef.current.getCurrentTime()
               onProgress({ playedSeconds: currentTime })
-            } catch (error) {
+            } catch {
               // Ignore errors during progress tracking
             }
           }
@@ -254,7 +263,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }
 
     // Handle player state change
-    const handleStateChange = (event: any) => {
+    const handleStateChange = (event: { data: number }) => {
       const playerState = event.data
 
       // YouTube player states
@@ -281,7 +290,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }
 
     // Handle player error
-    const handleError = (event: any) => {
+    const handleError = (event: { data: number }) => {
       console.error('YouTube player error:', event.data)
       setPlayerError(`YouTube error: ${event.data}`)
       setIsPlayerReady(false)
