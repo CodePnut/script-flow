@@ -372,7 +372,10 @@ export const API_CONFIG = {
  * Delete a transcript by ID
  */
 export async function deleteTranscript(transcriptId: string): Promise<void> {
-  const response = await apiRequest(`/api/transcript/${transcriptId}/delete`, {
+  const response = await apiRequest<{
+    success: boolean
+    message?: string
+  }>(`/api/transcript/${transcriptId}/delete`, {
     method: 'DELETE',
   })
 

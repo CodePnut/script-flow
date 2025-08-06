@@ -374,33 +374,172 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Process chapters from paragraphs
-    const chapters =
-      result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs?.paragraphs?.map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (paragraph: any, index: number) => ({
-          id: `chapter-${index + 1}`,
-          title: `Chapter ${index + 1}`,
-          start: paragraph.start,
-          end: paragraph.end,
+    // Process chapters from paragraphs - create meaningful chapters by grouping paragraphs
+    const allParagraphs =
+      result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
+        ?.paragraphs || []
+    const chapters: any[] = []
+
+    // Group paragraphs into chapters (every 3-5 paragraphs or significant time gaps)
+    let currentChapter: { paragraphs: any[]; start: number; end: number } = {
+      paragraphs: [],
+      start: 0,
+      end: 0,
+    }
+
+    for (let i = 0; i < allParagraphs.length; i++) {
+      const paragraph = allParagraphs[i]
+
+      if (currentChapter.paragraphs.length === 0) {
+        currentChapter.start = paragraph.start
+      }
+
+      currentChapter.paragraphs.push(paragraph)
+      currentChapter.end = paragraph.end
+
+      // Create new chapter after 4 paragraphs or if there's a significant time gap (>30 seconds)
+      const nextParagraph = allParagraphs[i + 1]
+      const shouldCreateChapter =
+        currentChapter.paragraphs.length >= 4 ||
+        !nextParagraph ||
+        (nextParagraph && nextParagraph.start - paragraph.end > 30)
+
+      if (shouldCreateChapter && currentChapter.paragraphs.length > 0) {
+        const chapterTitle: string =
+          currentChapter.paragraphs[0]?.sentences?.[0]?.text
+            ?.split(' ')
+            .slice(0, 6)
+            .join(' ') || `Chapter ${chapters.length + 1}`
+
+        chapters.push({
+          id: `chapter-${chapters.length + 1}`,
+          title: chapterTitle,
+          start: currentChapter.start,
+          end: currentChapter.end,
           description:
-            paragraph.sentences?.[0]?.text?.slice(0, 100) + '...' || '',
-        }),
-      ) || []
+            currentChapter.paragraphs
+              .map((p) => p.sentences?.[0]?.text)
+              .filter(Boolean)
+              .join(' ')
+              .slice(0, 200) + '...',
+        })
+
+        currentChapter = { paragraphs: [], start: 0, end: 0 }
+      }
+    }
+
+    // Fallback: if no meaningful chapters, create time-based chapters every 5 minutes
+    if (chapters.length === 0 && lengthSeconds > 300) {
+      const chapterDuration = 300 // 5 minutes
+      const numChapters = Math.ceil(lengthSeconds / chapterDuration)
+
+      for (let i = 0; i < numChapters; i++) {
+        const start = i * chapterDuration
+        const end = Math.min((i + 1) * chapterDuration, lengthSeconds)
+
+        chapters.push({
+          id: `chapter-${i + 1}`,
+          title: `Part ${i + 1}`,
+          start,
+          end,
+          description: `Video content from ${Math.floor(start / 60)}:${(start % 60).toString().padStart(2, '0')} to ${Math.floor(end / 60)}:${(end % 60).toString().padStart(2, '0')}`,
+        })
+      }
+    }
 
     // Process utterances for detailed transcript
-    const utterances =
-      result.results?.channels?.[0]?.alternatives?.[0]?.words?.map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (word: any, index: number) => ({
-          id: `utterance-${index}`,
-          start: word.start,
-          end: word.end,
-          text: word.punctuated_word || word.word,
-          confidence: word.confidence,
-          speaker: word.speaker || 0,
-        }),
-      ) || []
+    // Use paragraphs/sentences for better utterance grouping instead of individual words
+    const utterances: any[] = []
+    const paragraphs =
+      result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
+        ?.paragraphs || []
+
+    let utteranceIndex = 0
+    for (const paragraph of paragraphs) {
+      const sentences = paragraph.sentences || []
+      for (const sentence of sentences) {
+        utterances.push({
+          id: `utterance-${utteranceIndex++}`,
+          start: sentence.start,
+          end: sentence.end,
+          text: sentence.text,
+          confidence: sentence.confidence || 0.95,
+          speaker: sentence.speaker || 0,
+        })
+      }
+    }
+
+    // Fallback to words if no sentences are available
+    if (utterances.length === 0) {
+      const words =
+        result.results?.channels?.[0]?.alternatives?.[0]?.words || []
+      const groupedUtterances: any[] = []
+      let currentUtterance: {
+        words: any[]
+        start: number
+        end: number
+        speaker: number
+      } = { words: [], start: 0, end: 0, speaker: 0 }
+
+      for (const word of words) {
+        // Group words into utterances of ~10-15 words or by speaker change
+        if (currentUtterance.words.length === 0) {
+          currentUtterance.start = word.start
+          currentUtterance.speaker = word.speaker || 0
+        }
+
+        currentUtterance.words.push(word)
+        currentUtterance.end = word.end
+
+        // Create new utterance on speaker change or after 15 words
+        if (
+          currentUtterance.words.length >= 15 ||
+          (word.speaker !== undefined &&
+            word.speaker !== currentUtterance.speaker)
+        ) {
+          groupedUtterances.push({
+            id: `utterance-${groupedUtterances.length}`,
+            start: currentUtterance.start,
+            end: currentUtterance.end,
+            text: currentUtterance.words
+              .map((w) => w.punctuated_word || w.word)
+              .join(' '),
+            confidence:
+              currentUtterance.words.reduce(
+                (acc, w) => acc + (w.confidence || 0),
+                0,
+              ) / currentUtterance.words.length,
+            speaker: currentUtterance.speaker,
+          })
+          currentUtterance = {
+            words: [],
+            start: 0,
+            end: 0,
+            speaker: word.speaker || 0,
+          }
+        }
+      }
+
+      // Add remaining words as final utterance
+      if (currentUtterance.words.length > 0) {
+        groupedUtterances.push({
+          id: `utterance-${groupedUtterances.length}`,
+          start: currentUtterance.start,
+          end: currentUtterance.end,
+          text: currentUtterance.words
+            .map((w) => w.punctuated_word || w.word)
+            .join(' '),
+          confidence:
+            currentUtterance.words.reduce(
+              (acc, w) => acc + (w.confidence || 0),
+              0,
+            ) / currentUtterance.words.length,
+          speaker: currentUtterance.speaker,
+        })
+      }
+
+      utterances.push(...groupedUtterances)
+    }
 
     // Store transcript in database
     const transcriptRecord = await prisma.transcript.create({

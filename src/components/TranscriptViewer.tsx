@@ -165,6 +165,9 @@ export function TranscriptViewer({
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(autoScroll)
   const [userScrollTimeout, setUserScrollTimeout] =
     useState<NodeJS.Timeout | null>(null)
+  const [countdown, setCountdown] = useState(0)
+  const [countdownInterval, setCountdownInterval] =
+    useState<NodeJS.Timeout | null>(null)
   const isUserScrollingRef = useRef(false)
 
   // Find active segment based on current time
@@ -184,15 +187,43 @@ export function TranscriptViewer({
         setIsAutoScrollEnabled(false)
         isUserScrollingRef.current = true
 
-        // Clear existing timeout
+        // Clear existing timeout and countdown
         if (userScrollTimeout) {
           clearTimeout(userScrollTimeout)
         }
+        if (countdownInterval) {
+          clearInterval(countdownInterval)
+        }
 
-        // Re-enable auto-scroll after 10 seconds of no scrolling
+        // Start countdown from 10 seconds
+        setCountdown(10)
+
+        // Update countdown every second
+        const interval = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              // Countdown finished - re-enable auto-scroll
+              setIsAutoScrollEnabled(true)
+              isUserScrollingRef.current = false
+              clearInterval(interval)
+              setCountdownInterval(null)
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
+
+        setCountdownInterval(interval)
+
+        // Backup timeout in case interval fails
         const timeout = setTimeout(() => {
           setIsAutoScrollEnabled(true)
           isUserScrollingRef.current = false
+          setCountdown(0)
+          if (countdownInterval) {
+            clearInterval(countdownInterval)
+            setCountdownInterval(null)
+          }
         }, 10000)
 
         setUserScrollTimeout(timeout)
@@ -202,21 +233,7 @@ export function TranscriptViewer({
     // Handle scrolling outside the transcript (page-wide scrolling)
     const handlePageScroll = () => {
       // Same logic as container scroll
-      if (!isUserScrollingRef.current) {
-        setIsAutoScrollEnabled(false)
-        isUserScrollingRef.current = true
-
-        if (userScrollTimeout) {
-          clearTimeout(userScrollTimeout)
-        }
-
-        const timeout = setTimeout(() => {
-          setIsAutoScrollEnabled(true)
-          isUserScrollingRef.current = false
-        }, 10000)
-
-        setUserScrollTimeout(timeout)
-      }
+      handleScroll()
     }
 
     // Add listeners for both transcript container and page
@@ -229,8 +246,11 @@ export function TranscriptViewer({
       if (userScrollTimeout) {
         clearTimeout(userScrollTimeout)
       }
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
     }
-  }, [userScrollTimeout])
+  }, [userScrollTimeout, countdownInterval])
 
   // Auto-scroll to active segment (only when enabled and not user-scrolling)
   useEffect(() => {
@@ -290,9 +310,9 @@ export function TranscriptViewer({
             <p className="text-sm text-muted-fg">
               Click any text to jump to that moment in the video
             </p>
-            {!isAutoScrollEnabled && (
+            {!isAutoScrollEnabled && countdown > 0 && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                Auto-scroll resumes in 10s after scrolling stops
+                Auto-scroll resumes in {countdown}s
               </p>
             )}
           </div>
@@ -315,7 +335,9 @@ export function TranscriptViewer({
                 className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
               >
                 <PauseCircle className="h-3 w-3" />
-                <span>Scroll paused</span>
+                <span>
+                  {countdown > 0 ? `Paused (${countdown}s)` : 'Scroll paused'}
+                </span>
               </motion.div>
             )}
           </div>
