@@ -163,12 +163,13 @@ export function TranscriptViewer({
     null,
   )
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(autoScroll)
-  const [userScrollTimeout, setUserScrollTimeout] =
+  const [userActivityTimeout, setUserActivityTimeout] =
     useState<NodeJS.Timeout | null>(null)
   const [countdown, setCountdown] = useState(0)
   const [countdownInterval, setCountdownInterval] =
     useState<NodeJS.Timeout | null>(null)
-  const isUserScrollingRef = useRef(false)
+  const isUserActiveRef = useRef(false)
+  const lastMousePositionRef = useRef({ x: 0, y: 0 })
 
   // Find active segment based on current time
   useEffect(() => {
@@ -176,20 +177,20 @@ export function TranscriptViewer({
     setActiveSegment(active)
   }, [segments, currentTime])
 
-  // Handle user scroll detection (both inside transcript and page-wide)
+  // Handle user activity detection (mouse movement, scrolling, clicks)
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    const handleScroll = () => {
-      // If user is manually scrolling, disable auto-scroll temporarily
-      if (!isUserScrollingRef.current) {
+    const handleUserActivity = () => {
+      // Only pause auto-scroll if it's currently enabled
+      if (isAutoScrollEnabled && !isUserActiveRef.current) {
         setIsAutoScrollEnabled(false)
-        isUserScrollingRef.current = true
+        isUserActiveRef.current = true
 
         // Clear existing timeout and countdown
-        if (userScrollTimeout) {
-          clearTimeout(userScrollTimeout)
+        if (userActivityTimeout) {
+          clearTimeout(userActivityTimeout)
         }
         if (countdownInterval) {
           clearInterval(countdownInterval)
@@ -204,7 +205,7 @@ export function TranscriptViewer({
             if (prev <= 1) {
               // Countdown finished - re-enable auto-scroll
               setIsAutoScrollEnabled(true)
-              isUserScrollingRef.current = false
+              isUserActiveRef.current = false
               clearInterval(interval)
               setCountdownInterval(null)
               return 0
@@ -218,7 +219,7 @@ export function TranscriptViewer({
         // Backup timeout in case interval fails
         const timeout = setTimeout(() => {
           setIsAutoScrollEnabled(true)
-          isUserScrollingRef.current = false
+          isUserActiveRef.current = false
           setCountdown(0)
           if (countdownInterval) {
             clearInterval(countdownInterval)
@@ -226,31 +227,51 @@ export function TranscriptViewer({
           }
         }, 10000)
 
-        setUserScrollTimeout(timeout)
+        setUserActivityTimeout(timeout)
       }
     }
 
-    // Handle scrolling outside the transcript (page-wide scrolling)
-    const handlePageScroll = () => {
-      // Same logic as container scroll
-      handleScroll()
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e
+      const lastPos = lastMousePositionRef.current
+
+      // Only trigger if mouse actually moved significantly (not just hovering)
+      if (
+        Math.abs(clientX - lastPos.x) > 5 ||
+        Math.abs(clientY - lastPos.y) > 5
+      ) {
+        lastMousePositionRef.current = { x: clientX, y: clientY }
+        handleUserActivity()
+      }
     }
 
-    // Add listeners for both transcript container and page
+    const handleScroll = () => {
+      handleUserActivity()
+    }
+
+    const handleClick = () => {
+      handleUserActivity()
+    }
+
+    // Add listeners for various user activities
     container.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('scroll', handlePageScroll, { passive: true })
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+    window.addEventListener('click', handleClick, { passive: true })
 
     return () => {
       container.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('scroll', handlePageScroll)
-      if (userScrollTimeout) {
-        clearTimeout(userScrollTimeout)
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('click', handleClick)
+      if (userActivityTimeout) {
+        clearTimeout(userActivityTimeout)
       }
       if (countdownInterval) {
         clearInterval(countdownInterval)
       }
     }
-  }, [userScrollTimeout, countdownInterval])
+  }, [userActivityTimeout, countdownInterval, isAutoScrollEnabled])
 
   // Auto-scroll to active segment (only when enabled and not user-scrolling)
   useEffect(() => {
@@ -259,7 +280,7 @@ export function TranscriptViewer({
       isAutoScrollEnabled &&
       activeSegment &&
       containerRef.current &&
-      !isUserScrollingRef.current
+      !isUserActiveRef.current
     ) {
       const activeElement = containerRef.current.querySelector(
         `[data-segment-id="${activeSegment.id}"]`,

@@ -378,10 +378,24 @@ export async function POST(request: NextRequest) {
     const allParagraphs =
       result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
         ?.paragraphs || []
-    const chapters: any[] = []
+    const chapters: Array<{
+      id: string
+      title: string
+      start: number
+      end: number
+      description: string
+    }> = []
 
     // Group paragraphs into chapters (every 3-5 paragraphs or significant time gaps)
-    let currentChapter: { paragraphs: any[]; start: number; end: number } = {
+    let currentChapter: {
+      paragraphs: Array<{
+        sentences?: Array<{ text?: string }>
+        start: number
+        end: number
+      }>
+      start: number
+      end: number
+    } = {
       paragraphs: [],
       start: 0,
       end: 0,
@@ -449,7 +463,14 @@ export async function POST(request: NextRequest) {
 
     // Process utterances for detailed transcript
     // Use paragraphs/sentences for better utterance grouping instead of individual words
-    const utterances: any[] = []
+    const utterances: Array<{
+      id: string
+      start: number
+      end: number
+      text: string
+      confidence: number
+      speaker: number
+    }> = []
     const paragraphs =
       result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
         ?.paragraphs || []
@@ -473,9 +494,23 @@ export async function POST(request: NextRequest) {
     if (utterances.length === 0) {
       const words =
         result.results?.channels?.[0]?.alternatives?.[0]?.words || []
-      const groupedUtterances: any[] = []
+      const groupedUtterances: Array<{
+        id: string
+        start: number
+        end: number
+        text: string
+        confidence: number
+        speaker: number
+      }> = []
       let currentUtterance: {
-        words: any[]
+        words: Array<{
+          punctuated_word?: string
+          word?: string
+          confidence?: number
+          start: number
+          end: number
+          speaker?: number
+        }>
         start: number
         end: number
         speaker: number
