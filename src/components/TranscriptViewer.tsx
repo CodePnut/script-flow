@@ -1,7 +1,16 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Clock, Play, User, ScrollText, PauseCircle } from 'lucide-react'
+import {
+  Clock,
+  Play,
+  User,
+  ScrollText,
+  PauseCircle,
+  FileText,
+  Download,
+  Copy,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { TranscriptSegment } from '@/lib/transcript'
@@ -14,6 +23,14 @@ import { cn } from '@/lib/utils'
 
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog'
+import { useToast } from './ui/use-toast'
 
 /**
  * TranscriptViewer component props interface
@@ -163,13 +180,15 @@ export function TranscriptViewer({
     null,
   )
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(autoScroll)
-  const [userActivityTimeout, setUserActivityTimeout] =
-    useState<NodeJS.Timeout | null>(null)
   const [countdown, setCountdown] = useState(0)
-  const [countdownInterval, setCountdownInterval] =
-    useState<NodeJS.Timeout | null>(null)
-  const isUserActiveRef = useRef(false)
+  const [isFullTextDialogOpen, setIsFullTextDialogOpen] = useState(false)
   const lastMousePositionRef = useRef({ x: 0, y: 0 })
+  const { toast } = useToast()
+
+  // Internal timers/refs so we can reset without causing re-renders
+  const reenableTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const pauseUntilRef = useRef<number | null>(null)
 
   // Find active segment based on current time
   useEffect(() => {
@@ -177,101 +196,97 @@ export function TranscriptViewer({
     setActiveSegment(active)
   }, [segments, currentTime])
 
-  // Handle user activity detection (mouse movement, scrolling, clicks)
+  // Handle user activity detection (mouse/touch/scroll/wheel/click)
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    const handleUserActivity = () => {
-      // Only pause auto-scroll if it's currently enabled
-      if (isAutoScrollEnabled && !isUserActiveRef.current) {
-        setIsAutoScrollEnabled(false)
-        isUserActiveRef.current = true
-
-        // Clear existing timeout and countdown
-        if (userActivityTimeout) {
-          clearTimeout(userActivityTimeout)
-        }
-        if (countdownInterval) {
-          clearInterval(countdownInterval)
-        }
-
-        // Start countdown from 10 seconds
-        setCountdown(10)
-
-        // Update countdown every second
-        const interval = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev <= 1) {
-              // Countdown finished - re-enable auto-scroll
-              setIsAutoScrollEnabled(true)
-              isUserActiveRef.current = false
-              clearInterval(interval)
-              setCountdownInterval(null)
-              return 0
-            }
-            return prev - 1
-          })
-        }, 1000)
-
-        setCountdownInterval(interval)
-
-        // Backup timeout in case interval fails
-        const timeout = setTimeout(() => {
-          setIsAutoScrollEnabled(true)
-          isUserActiveRef.current = false
-          setCountdown(0)
-          if (countdownInterval) {
-            clearInterval(countdownInterval)
-            setCountdownInterval(null)
-          }
-        }, 10000)
-
-        setUserActivityTimeout(timeout)
+    const startOrExtendPause = () => {
+      // Set to paused immediately and extend pause window on each activity
+      if (reenableTimeoutRef.current) {
+        clearTimeout(reenableTimeoutRef.current)
       }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current)
+      }
+
+      const PAUSE_MS = 10_000
+      pauseUntilRef.current = Date.now() + PAUSE_MS
+      setIsAutoScrollEnabled(false)
+
+      // Countdown updater (visual only)
+      setCountdown(Math.ceil(PAUSE_MS / 1000))
+      countdownIntervalRef.current = setInterval(() => {
+        if (!pauseUntilRef.current) {
+          setCountdown(0)
+          return
+        }
+        const remainingMs = Math.max(0, pauseUntilRef.current - Date.now())
+        const remainingSec = Math.ceil(remainingMs / 1000)
+        setCountdown(remainingSec)
+        if (remainingMs <= 0) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current)
+            countdownIntervalRef.current = null
+          }
+        }
+      }, 250)
+
+      // Timer to re-enable when no activity for PAUSE_MS
+      reenableTimeoutRef.current = setTimeout(() => {
+        setIsAutoScrollEnabled(true)
+        setCountdown(0)
+        pauseUntilRef.current = null
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current)
+          countdownIntervalRef.current = null
+        }
+      }, PAUSE_MS)
     }
 
     const handleMouseMove = (e: MouseEvent) => {
       const { clientX, clientY } = e
       const lastPos = lastMousePositionRef.current
-
-      // Only trigger if mouse actually moved significantly (not just hovering)
       if (
         Math.abs(clientX - lastPos.x) > 5 ||
         Math.abs(clientY - lastPos.y) > 5
       ) {
         lastMousePositionRef.current = { x: clientX, y: clientY }
-        handleUserActivity()
+        startOrExtendPause()
       }
     }
 
-    const handleScroll = () => {
-      handleUserActivity()
-    }
-
-    const handleClick = () => {
-      handleUserActivity()
-    }
+    const handleScrollOrWheel = () => startOrExtendPause()
+    const handleClick = () => startOrExtendPause()
+    const handleTouch = () => startOrExtendPause()
 
     // Add listeners for various user activities
-    container.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    container.addEventListener('scroll', handleScrollOrWheel, { passive: true })
+    window.addEventListener('scroll', handleScrollOrWheel, { passive: true })
+    window.addEventListener('wheel', handleScrollOrWheel, { passive: true })
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
     window.addEventListener('click', handleClick, { passive: true })
+    window.addEventListener('touchstart', handleTouch, { passive: true })
+    window.addEventListener('touchmove', handleTouch, { passive: true })
 
     return () => {
-      container.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('scroll', handleScroll)
+      container.removeEventListener('scroll', handleScrollOrWheel)
+      window.removeEventListener('scroll', handleScrollOrWheel)
+      window.removeEventListener('wheel', handleScrollOrWheel)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('click', handleClick)
-      if (userActivityTimeout) {
-        clearTimeout(userActivityTimeout)
+      window.removeEventListener('touchstart', handleTouch)
+      window.removeEventListener('touchmove', handleTouch)
+      if (reenableTimeoutRef.current) {
+        clearTimeout(reenableTimeoutRef.current)
+        reenableTimeoutRef.current = null
       }
-      if (countdownInterval) {
-        clearInterval(countdownInterval)
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current)
+        countdownIntervalRef.current = null
       }
     }
-  }, [userActivityTimeout, countdownInterval, isAutoScrollEnabled])
+  }, [])
 
   // Auto-scroll to active segment (only when enabled and not user-scrolling)
   useEffect(() => {
@@ -279,8 +294,7 @@ export function TranscriptViewer({
       autoScroll &&
       isAutoScrollEnabled &&
       activeSegment &&
-      containerRef.current &&
-      !isUserActiveRef.current
+      containerRef.current
     ) {
       const activeElement = containerRef.current.querySelector(
         `[data-segment-id="${activeSegment.id}"]`,
@@ -297,6 +311,63 @@ export function TranscriptViewer({
 
   // Group segments into paragraphs for better readability
   const paragraphs = groupSegmentsIntoParagraphs(segments, maxParagraphLength)
+
+  /**
+   * Generate full transcript text from segments
+   */
+  const generateFullText = () => {
+    return segments
+      .map((segment) => segment.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  /**
+   * Download transcript as text file
+   */
+  const downloadTranscript = () => {
+    const fullText = generateFullText()
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `transcript-${Date.now()}.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    toast({
+      title: 'Download Complete',
+      description: 'Transcript downloaded successfully',
+      variant: 'default',
+    })
+  }
+
+  /**
+   * Copy transcript to clipboard
+   */
+  const copyToClipboard = async () => {
+    try {
+      const fullText = generateFullText()
+      await navigator.clipboard.writeText(fullText)
+
+      toast({
+        title: 'Copied to Clipboard',
+        description: 'Full transcript copied successfully',
+        variant: 'default',
+      })
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      toast({
+        title: 'Copy Failed',
+        description: 'Unable to copy to clipboard',
+        variant: 'destructive',
+      })
+    }
+  }
 
   if (segments.length === 0) {
     return (
@@ -338,29 +409,94 @@ export function TranscriptViewer({
             )}
           </div>
 
-          {/* Auto-scroll status indicator */}
-          <div className="flex items-center gap-2 text-xs">
-            {isAutoScrollEnabled ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-1 text-green-600 dark:text-green-400"
-              >
-                <ScrollText className="h-3 w-3" />
-                <span>Auto-scroll</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
-              >
-                <PauseCircle className="h-3 w-3" />
-                <span>
-                  {countdown > 0 ? `Paused (${countdown}s)` : 'Scroll paused'}
-                </span>
-              </motion.div>
-            )}
+          {/* Auto-scroll status and actions */}
+          <div className="flex items-center gap-3">
+            {/* Full text dialog trigger */}
+            <Dialog
+              open={isFullTextDialogOpen}
+              onOpenChange={setIsFullTextDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  Full Text
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-sm border-2 shadow-2xl z-[100]">
+                <DialogHeader className="pb-4 border-b border-border/20">
+                  <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Complete Transcript
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="flex-1 overflow-auto p-6 bg-background border-2 border-border/20 rounded-lg shadow-inner backdrop-blur-sm">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="leading-relaxed text-base text-foreground whitespace-pre-wrap font-medium tracking-wide selection:bg-primary/20">
+                      {generateFullText()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-border/20 bg-background">
+                  <div className="text-sm text-muted-foreground font-medium">
+                    {segments.length} segments •{' '}
+                    {Math.ceil(generateFullText().length / 1000)}k characters
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyToClipboard}
+                      className="flex items-center gap-2 hover:bg-muted transition-colors"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </Button>
+
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={downloadTranscript}
+                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Auto-scroll status indicator */}
+            <div className="flex items-center gap-2 text-xs">
+              {isAutoScrollEnabled ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1 text-green-600 dark:text-green-400"
+                >
+                  <ScrollText className="h-3 w-3" />
+                  <span>Auto-scroll</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
+                >
+                  <PauseCircle className="h-3 w-3" />
+                  <span>
+                    {countdown > 0 ? `Paused (${countdown}s)` : 'Scroll paused'}
+                  </span>
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>

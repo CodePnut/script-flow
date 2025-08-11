@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { FileText, Play } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { ProgressBarVariants } from '@/components/ProgressBar'
@@ -35,6 +36,7 @@ export default function TranscribePage() {
 
   const { addToHistory } = useHistoryStore()
   const { toast } = useToast()
+  const router = useRouter()
 
   /**
    * Handle URL form submission
@@ -84,15 +86,13 @@ export default function TranscribePage() {
       // Show success toast
       toast({
         title: 'Transcription Complete!',
-        description: `Successfully transcribed: ${result.title}`,
+        description: `Redirecting to video viewer...`,
         variant: 'success',
       })
 
-      // Reset state after a delay
+      // Redirect to video viewer after a brief delay
       setTimeout(() => {
-        setIsTranscribing(false)
-        setProgress(0)
-        setCurrentUrl('')
+        router.push(`/video/${result.videoId}`)
       }, 1500)
     } catch (error) {
       // Handle errors

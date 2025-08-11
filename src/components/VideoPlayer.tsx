@@ -1,7 +1,13 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -81,6 +87,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     const [playerError, setPlayerError] = useState<string | null>(null)
     const [isPlayerReady, setIsPlayerReady] = useState(false)
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => setMounted(true), [])
 
     // Debug logging
     React.useEffect(() => {
@@ -90,20 +99,21 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [videoId, isPlayerReady])
 
     // YouTube player options
-    const opts = {
-      height: '100%',
-      width: '100%',
-      playerVars: {
-        autoplay: playing ? 1 : 0,
-        controls: controls ? 1 : 0,
-        modestbranding: 1,
-        rel: 0,
-        origin:
-          typeof window !== 'undefined'
-            ? window.location.origin
-            : 'http://localhost:3000',
-      },
-    }
+    const opts = React.useMemo(() => {
+      const origin =
+        typeof window !== 'undefined' ? window.location.origin : undefined
+      return {
+        height: '100%',
+        width: '100%',
+        playerVars: {
+          autoplay: playing ? 1 : 0,
+          controls: controls ? 1 : 0,
+          modestbranding: 1,
+          rel: 0,
+          ...(origin ? { origin } : {}),
+        },
+      }
+    }, [playing, controls])
 
     // Expose player methods through ref
     useImperativeHandle(ref, () => ({
@@ -330,14 +340,17 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
             </div>
           ) : (
             <div className="absolute inset-0">
-              <YouTube
-                videoId={videoId}
-                opts={opts}
-                onReady={handleReady}
-                onStateChange={handleStateChange}
-                onError={handleError}
-                className="w-full h-full"
-              />
+              {mounted && videoId ? (
+                <YouTube
+                  key={videoId}
+                  videoId={videoId}
+                  opts={opts}
+                  onReady={handleReady}
+                  onStateChange={handleStateChange}
+                  onError={handleError}
+                  className="w-full h-full"
+                />
+              ) : null}
             </div>
           )}
         </div>
