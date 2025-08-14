@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { cache } from '@/lib/cache'
 import { prisma } from '@/lib/prisma'
 import type {
   VideoData,
@@ -106,6 +107,17 @@ export async function GET(
       return NextResponse.json(mockVideoData)
     }
 
+    // Try to get video data from cache first
+    console.log(`🔍 Checking cache for video: ${videoId}`)
+    const cachedVideoData = await cache.getVideoMetadata(videoId)
+
+    if (cachedVideoData) {
+      console.log(`✅ Cache hit for video: ${videoId}`)
+      return NextResponse.json(cachedVideoData)
+    }
+
+    console.log(`🔍 Cache miss for video: ${videoId}, fetching from database`)
+
     // Fetch the most recent completed transcript for this video
     const transcript = await prisma.transcript.findFirst({
       where: {
@@ -157,6 +169,10 @@ export async function GET(
             ?.source || 'deepgram',
       },
     }
+
+    // Cache the video data for future requests
+    console.log(`💾 Caching video data for: ${videoId}`)
+    await cache.setVideoMetadata(videoId, videoData)
 
     return NextResponse.json(videoData)
   } catch (error) {

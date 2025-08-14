@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Database } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 
+import { CacheStatus } from '@/components/CacheStatus'
 import { TranscriptTable } from '@/components/TranscriptTable'
 import { useToast } from '@/components/ui/use-toast'
 import { type VideoHistoryItem } from '@/hooks/useHistoryStore'
@@ -112,19 +113,33 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Main Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <TranscriptTable
-            data={historyData}
-            loading={loading}
-            error={error}
-            onPageChange={handlePageChange}
-            currentPage={currentPage}
-          />
-        </motion.div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Table */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="lg:col-span-3"
+          >
+            <TranscriptTable
+              data={historyData}
+              loading={loading}
+              error={error}
+              onPageChange={handlePageChange}
+              currentPage={currentPage}
+            />
+          </motion.div>
+
+          {/* Sidebar with Cache Status */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-1"
+          >
+            <CacheStatus />
+          </motion.div>
+        </div>
       </div>
     </div>
   )

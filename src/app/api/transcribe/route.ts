@@ -24,6 +24,7 @@ import ytdl from '@distube/ytdl-core'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import { cache } from '@/lib/cache'
 import { getUserIdentifier } from '@/lib/ipHash'
 import { prisma } from '@/lib/prisma'
 import { extractVideoId, isValidYouTubeUrl } from '@/lib/youtube'
@@ -179,6 +180,10 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ Mock transcription completed for video:', videoId)
 
+      // Cache the mock transcript for future requests
+      console.log(`💾 Caching mock transcript: ${videoId}`)
+      await cache.setTranscript(videoId, transcriptRecord)
+
       return NextResponse.json({
         transcriptId: transcriptRecord.id,
         videoId: videoId,
@@ -256,7 +261,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if we already have a recent transcription for this video
+    // Check cache first for existing transcript
+    console.log(`🔍 Checking cache for existing transcript: ${videoId}`)
+    const cachedTranscript = await cache.getTranscript(videoId)
+
+    if (cachedTranscript && cachedTranscript.status === 'completed') {
+      console.log(`✅ Cache hit for transcript: ${videoId}`)
+      return NextResponse.json({
+        transcriptId: cachedTranscript.id,
+        status: 'completed',
+        message: 'Using cached transcription',
+      })
+    }
+
+    // Check if we already have a recent transcription for this video in database
     const existingTranscript = await prisma.transcript.findFirst({
       where: {
         videoId: videoId,
@@ -269,6 +287,10 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingTranscript) {
+      // Cache the existing transcript for future requests
+      console.log(`💾 Caching existing transcript: ${videoId}`)
+      await cache.setTranscript(videoId, existingTranscript)
+
       return NextResponse.json({
         transcriptId: existingTranscript.id,
         status: 'completed',
@@ -603,6 +625,13 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('✅ Transcription completed for video:', videoId)
+
+    // Cache the new transcript for future requests
+    console.log(`💾 Caching new transcript: ${videoId}`)
+    await cache.setTranscript(videoId, transcriptRecord)
+
+    // Invalidate any existing video metadata cache since we have new data
+    await cache.invalidateTranscript(videoId)
 
     // Return successful response
     return NextResponse.json({
