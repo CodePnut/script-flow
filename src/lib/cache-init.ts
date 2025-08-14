@@ -22,15 +22,19 @@ export async function initializeCache(): Promise<void> {
   try {
     console.log('🚀 Initializing cache system...')
 
-    // Test Redis connection
-    const client = await getRedisClient()
+    // Test Redis connection with timeout
+    const connectionPromise = getRedisClient()
+    const timeoutPromise = new Promise<null>(
+      (resolve) => setTimeout(() => resolve(null), 5000), // 5 second timeout
+    )
+
+    const client = await Promise.race([connectionPromise, timeoutPromise])
+
     if (client) {
       console.log('✅ Redis client initialized successfully')
 
-      // Start cache monitoring in production or when explicitly enabled
-      const shouldMonitor =
-        process.env.NODE_ENV === 'production' ||
-        process.env.ENABLE_CACHE_MONITORING === 'true'
+      // Start cache monitoring only when explicitly enabled
+      const shouldMonitor = process.env.ENABLE_CACHE_MONITORING === 'true'
 
       if (shouldMonitor) {
         // Start monitoring with appropriate interval
@@ -47,14 +51,23 @@ export async function initializeCache(): Promise<void> {
         )
       }
 
-      // Perform initial health check
-      const healthReport = await cacheMonitor.performHealthCheck()
-      console.log(`🏥 Initial cache health: ${healthReport.status}`)
+      // Perform initial health check (non-blocking)
+      cacheMonitor
+        .performHealthCheck()
+        .then((healthReport) => {
+          console.log(`🏥 Initial cache health: ${healthReport.status}`)
+        })
+        .catch(() => {
+          // Ignore health check errors
+        })
     } else {
       console.log('🟡 Redis not available, running without cache')
     }
   } catch (error) {
-    console.warn('🟡 Cache initialization failed:', error)
+    console.warn(
+      '🟡 Cache initialization failed:',
+      error instanceof Error ? error.message : 'Unknown error',
+    )
     console.log('📝 Application will continue without caching')
   }
 }

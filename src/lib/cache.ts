@@ -396,17 +396,23 @@ class CacheService {
 export const cacheService = new CacheService()
 
 /**
- * Initialize cache system on module load
+ * Initialize cache system on module load (non-blocking)
  * This ensures cache monitoring starts when the cache is first used
  */
 if (typeof window === 'undefined') {
-  // Only run on server side
-  import('./cache-init')
-    .then(({ initializeCache, setupCacheShutdownHandlers }) => {
-      initializeCache().catch(console.warn)
-      setupCacheShutdownHandlers()
-    })
-    .catch(console.warn)
+  // Only run on server side, with a delay to prevent blocking startup
+  setTimeout(() => {
+    import('./cache-init')
+      .then(({ initializeCache, setupCacheShutdownHandlers }) => {
+        initializeCache().catch(() => {
+          // Silently fail cache initialization to prevent blocking the app
+        })
+        setupCacheShutdownHandlers()
+      })
+      .catch(() => {
+        // Silently fail cache initialization
+      })
+  }, 1000) // 1 second delay
 }
 
 /**

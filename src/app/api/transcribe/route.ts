@@ -25,8 +25,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { cache } from '@/lib/cache'
+import { dbOptimization } from '@/lib/db-optimization'
 import { getUserIdentifier } from '@/lib/ipHash'
 import { prisma } from '@/lib/prisma'
+import { searchIndexing } from '@/lib/search-indexing'
 import { extractVideoId, isValidYouTubeUrl } from '@/lib/youtube'
 
 /**
@@ -154,35 +156,46 @@ export async function POST(request: NextRequest) {
       // Get user identifier
       const userHash = getUserIdentifier(request)
 
-      // Create mock transcript record
-      const transcriptRecord = await prisma.transcript.create({
-        data: {
-          videoId: videoId,
-          title: 'Mock Video Title',
-          description: 'A mock video for testing purposes',
-          duration: 1800, // 30 minutes
-          summary: MOCK_TRANSCRIPT_DATA.summary,
-          language: 'en',
-          chapters: MOCK_TRANSCRIPT_DATA.chapters,
-          utterances: MOCK_TRANSCRIPT_DATA.utterances,
-          metadata: {
-            source: 'mock',
-            model: 'mock-nova-2',
-            confidence: 0.95,
-            diarization: true,
-            generatedAt: new Date().toISOString(),
-          },
-          deepgramJob: `mock-job-${Date.now()}-${videoId}`,
-          status: 'completed',
-          ipHash: userHash,
-        },
-      })
+      // Create mock transcript record with monitoring
+      const transcriptRecord = await dbOptimization.executeWithMonitoring(
+        'transcript_create',
+        () =>
+          prisma.transcript.create({
+            data: {
+              videoId: videoId,
+              title: 'Mock Video Title',
+              description: 'A mock video for testing purposes',
+              duration: 1800, // 30 minutes
+              summary: MOCK_TRANSCRIPT_DATA.summary,
+              language: 'en',
+              chapters: MOCK_TRANSCRIPT_DATA.chapters,
+              utterances: MOCK_TRANSCRIPT_DATA.utterances,
+              metadata: {
+                source: 'mock',
+                model: 'mock-nova-2',
+                confidence: 0.95,
+                diarization: true,
+                generatedAt: new Date().toISOString(),
+              },
+              deepgramJob: `mock-job-${Date.now()}-${videoId}`,
+              status: 'completed',
+              ipHash: userHash,
+            },
+          }),
+        { videoId, title: 'Mock Video Title' },
+      )
 
       console.log('✅ Mock transcription completed for video:', videoId)
 
       // Cache the mock transcript for future requests
       console.log(`💾 Caching mock transcript: ${videoId}`)
       await cache.setTranscript(videoId, transcriptRecord)
+
+      // Index the mock transcript for search (async)
+      console.log(`🔍 Indexing mock transcript for search: ${videoId}`)
+      searchIndexing.indexTranscript(transcriptRecord.id).catch((error) => {
+        console.error('Failed to index mock transcript for search:', error)
+      })
 
       return NextResponse.json({
         transcriptId: transcriptRecord.id,
@@ -275,16 +288,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if we already have a recent transcription for this video in database
-    const existingTranscript = await prisma.transcript.findFirst({
-      where: {
-        videoId: videoId,
-        status: 'completed',
-        createdAt: {
-          // Only consider transcripts from the last 24 hours as "recent"
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
-      },
-    })
+    const existingTranscript = await dbOptimization.executeWithMonitoring(
+      'transcript_fetch',
+      () =>
+        prisma.transcript.findFirst({
+          where: {
+            videoId: videoId,
+            status: 'completed',
+            createdAt: {
+              // Only consider transcripts from the last 24 hours as "recent"
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+      { videoId },
+    )
 
     if (existingTranscript) {
       // Cache the existing transcript for future requests
@@ -598,31 +616,37 @@ export async function POST(request: NextRequest) {
       utterances.push(...groupedUtterances)
     }
 
-    // Store transcript in database
-    const transcriptRecord = await prisma.transcript.create({
-      data: {
-        videoId: videoId,
-        title: videoInfo.videoDetails.title,
-        description: videoInfo.videoDetails.description?.slice(0, 1000) || null,
-        duration: lengthSeconds,
-        summary:
-          result.results?.channels?.[0]?.alternatives?.[0]?.summaries?.[0]
-            ?.summary || null,
-        language: 'en',
-        chapters: chapters,
-        utterances: utterances,
-        metadata: {
-          source: 'deepgram',
-          model: DEEPGRAM_OPTIONS.model,
-          confidence: transcript.confidence,
-          diarization: DEEPGRAM_OPTIONS.diarize,
-          generatedAt: new Date().toISOString(),
-        },
-        deepgramJob: `job-${Date.now()}-${videoId}`, // Mock job ID since we're doing direct processing
-        status: 'completed',
-        ipHash: userHash,
-      },
-    })
+    // Store transcript in database with monitoring
+    const transcriptRecord = await dbOptimization.executeWithMonitoring(
+      'transcript_create',
+      () =>
+        prisma.transcript.create({
+          data: {
+            videoId: videoId,
+            title: videoInfo.videoDetails.title,
+            description:
+              videoInfo.videoDetails.description?.slice(0, 1000) || null,
+            duration: lengthSeconds,
+            summary:
+              result.results?.channels?.[0]?.alternatives?.[0]?.summaries?.[0]
+                ?.summary || null,
+            language: 'en',
+            chapters: chapters,
+            utterances: utterances,
+            metadata: {
+              source: 'deepgram',
+              model: DEEPGRAM_OPTIONS.model,
+              confidence: transcript.confidence,
+              diarization: DEEPGRAM_OPTIONS.diarize,
+              generatedAt: new Date().toISOString(),
+            },
+            deepgramJob: `job-${Date.now()}-${videoId}`, // Mock job ID since we're doing direct processing
+            status: 'completed',
+            ipHash: userHash,
+          },
+        }),
+      { videoId, title: videoInfo.videoDetails.title },
+    )
 
     console.log('✅ Transcription completed for video:', videoId)
 
@@ -632,6 +656,12 @@ export async function POST(request: NextRequest) {
 
     // Invalidate any existing video metadata cache since we have new data
     await cache.invalidateTranscript(videoId)
+
+    // Index the transcript for search (async, don't wait for completion)
+    console.log(`🔍 Indexing transcript for search: ${videoId}`)
+    searchIndexing.indexTranscript(transcriptRecord.id).catch((error) => {
+      console.error('Failed to index transcript for search:', error)
+    })
 
     // Return successful response
     return NextResponse.json({

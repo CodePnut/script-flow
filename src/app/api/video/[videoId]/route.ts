@@ -18,7 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { cache } from '@/lib/cache'
-import { prisma } from '@/lib/prisma'
+import { optimizedQueries } from '@/lib/db-optimization'
 import type {
   VideoData,
   TranscriptSegment,
@@ -118,31 +118,8 @@ export async function GET(
 
     console.log(`🔍 Cache miss for video: ${videoId}, fetching from database`)
 
-    // Fetch the most recent completed transcript for this video
-    const transcript = await prisma.transcript.findFirst({
-      where: {
-        videoId: videoId,
-        status: 'completed',
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        id: true,
-        videoId: true,
-        title: true,
-        description: true,
-        duration: true,
-        summary: true,
-        language: true,
-        chapters: true,
-        utterances: true,
-        metadata: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    // Fetch the most recent completed transcript for this video using optimized query
+    const transcript = await optimizedQueries.findTranscript(videoId)
 
     if (!transcript) {
       return NextResponse.json(

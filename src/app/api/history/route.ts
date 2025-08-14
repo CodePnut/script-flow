@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import { optimizedQueries } from '@/lib/db-optimization'
 import { getUserIdentifier } from '@/lib/ipHash'
 import { prisma } from '@/lib/prisma'
 
@@ -68,33 +69,11 @@ export async function GET(request: NextRequest) {
     // Get user identifier from request
     const userHash = getUserIdentifier(request)
 
-    // Calculate pagination offset
-    const offset = (page - 1) * limit
+    // Note: offset calculation moved to optimizedQueries.getUserHistory
 
-    // Fetch transcripts with pagination
+    // Fetch transcripts with pagination using optimized queries
     const [transcripts, totalCount] = await Promise.all([
-      prisma.transcript.findMany({
-        where: {
-          ipHash: userHash,
-          status: 'completed',
-        },
-        select: {
-          id: true,
-          videoId: true,
-          title: true,
-          description: true,
-          duration: true,
-          language: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip: offset,
-        take: limit,
-      }),
+      optimizedQueries.getUserHistory(userHash, page, limit),
       prisma.transcript.count({
         where: {
           ipHash: userHash,

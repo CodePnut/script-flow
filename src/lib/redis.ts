@@ -61,29 +61,46 @@ async function createRedisClient(): Promise<RedisClient | null> {
       url: config.url,
       // Connection options
       socket: {
-        connectTimeout: 5000,
+        connectTimeout: 3000, // Shorter timeout
+        reconnectStrategy: false, // Disable automatic reconnection to prevent loops
       },
     })
 
-    // Error handling
+    // Error handling - suppress repeated error messages
+    let errorLogged = false
     client.on('error', (error) => {
-      console.warn('🟡 Redis client error:', error.message)
+      if (!errorLogged) {
+        console.warn(
+          '🟡 Redis client error (suppressing further errors):',
+          error.message,
+        )
+        errorLogged = true
+      }
     })
 
     client.on('connect', () => {
       console.log('✅ Redis client connected')
+      errorLogged = false // Reset error logging on successful connection
     })
 
     client.on('disconnect', () => {
       console.log('🔌 Redis client disconnected')
     })
 
-    // Connect to Redis
-    await client.connect()
+    // Connect to Redis with timeout
+    const connectPromise = client.connect()
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timeout')), 3000),
+    )
+
+    await Promise.race([connectPromise, timeoutPromise])
 
     return client
   } catch (error) {
-    console.warn('🟡 Failed to initialize Redis client:', error)
+    console.warn(
+      '🟡 Failed to initialize Redis client:',
+      error instanceof Error ? error.message : 'Unknown error',
+    )
     console.log('📝 Application will continue without caching')
     return null
   }
@@ -95,8 +112,14 @@ async function createRedisClient(): Promise<RedisClient | null> {
  */
 let redisClient: RedisClient | null = null
 let redisInitialized = false
+let redisConnectionFailed = false
 
 export async function getRedisClient(): Promise<RedisClient | null> {
+  // If Redis connection previously failed, don't try again for this session
+  if (redisConnectionFailed) {
+    return null
+  }
+
   if (redisInitialized) {
     return redisClient
   }
@@ -109,15 +132,25 @@ export async function getRedisClient(): Promise<RedisClient | null> {
   }
 
   // Initialize new client
-  redisClient = await createRedisClient()
-  redisInitialized = true
+  try {
+    redisClient = await createRedisClient()
+    redisInitialized = true
 
-  // Store globally in development
-  if (process.env.NODE_ENV === 'development' && redisClient) {
-    global.__redis = redisClient
+    // Store globally in development
+    if (process.env.NODE_ENV === 'development' && redisClient) {
+      global.__redis = redisClient
+    }
+
+    return redisClient
+  } catch (error) {
+    console.warn(
+      '🟡 Redis connection failed, disabling for this session:',
+      error,
+    )
+    redisConnectionFailed = true
+    redisInitialized = true
+    return null
   }
-
-  return redisClient
 }
 
 /**

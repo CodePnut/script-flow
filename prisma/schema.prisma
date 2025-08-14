@@ -59,18 +59,88 @@ model Transcript {
   // IP-based tracking for anonymous users (privacy-preserving)
   ipHash String? @map("ip_hash")
 
+  // Search index relationship
+  searchIndex SearchIndex?
+
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Composite indexes for efficient queries
+  // Enhanced composite indexes for efficient queries
   @@index([videoId])
   @@index([videoId, status])
   @@index([userId, createdAt])
   @@index([ipHash])
   @@index([ipHash, createdAt])
   @@index([status, createdAt])
+  @@index([language, status]) // For language-specific queries
+  @@index([duration, status]) // For duration-based filtering
+  @@index([createdAt, status]) // For recent transcripts
+  @@index([title]) // For title-based searches
   @@map("transcripts")
+}
+
+/**
+ * Analytics Event model for tracking user interactions and system performance
+ * Supports privacy-compliant analytics and performance monitoring
+ */
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  sessionId   String   @map("session_id")
+  ipHash      String   @map("ip_hash")
+  eventType   String   @map("event_type")
+  eventData   Json     @map("event_data")
+  timestamp   DateTime @default(now())
+  
+  // Indexes for efficient analytics queries
+  @@index([userId, timestamp])
+  @@index([sessionId, timestamp])
+  @@index([ipHash, timestamp])
+  @@index([eventType, timestamp])
+  @@index([timestamp]) // For time-based analytics
+  @@map("analytics_events")
+}
+
+/**
+ * Search Index model for optimized full-text search
+ * Pre-processed search data for faster query performance
+ */
+model SearchIndex {
+  id          String   @id @default(cuid())
+  transcriptId String  @unique @map("transcript_id") // Make unique for one-to-one relation
+  content     String   @db.Text
+  tokens      String[] // Tokenized content for search
+  language    String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  transcript  Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+
+  // Indexes for search optimization
+  @@index([language])
+  @@index([createdAt])
+  @@map("search_index")
+}
+
+/**
+ * Query Performance Log for monitoring slow queries and optimization
+ * Tracks database query performance for analytics and optimization
+ */
+model QueryPerformanceLog {
+  id          String   @id @default(cuid())
+  queryType   String   @map("query_type")
+  queryHash   String   @map("query_hash") // Hash of the query for grouping
+  duration    Int      // Query duration in milliseconds
+  parameters  Json?    // Query parameters (anonymized)
+  timestamp   DateTime @default(now())
+  
+  // Indexes for performance analysis
+  @@index([queryType, timestamp])
+  @@index([queryHash, timestamp])
+  @@index([duration, timestamp])
+  @@index([timestamp])
+  @@map("query_performance_log")
 }
 
 /**
