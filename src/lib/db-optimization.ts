@@ -104,7 +104,9 @@ class DatabaseOptimizationService {
             queryType,
             queryHash: this.generateQueryHash(queryType, parameters),
             duration,
-            parameters: metrics.parameters as any, // Prisma JSON type compatibility
+            parameters: metrics.parameters
+              ? JSON.parse(JSON.stringify(metrics.parameters))
+              : null, // Prisma JSON type compatibility
           },
         })
 
