@@ -18,7 +18,7 @@ import { notFound } from 'next/navigation'
 import { useEffect, useRef, useState, use } from 'react'
 
 import { ChapterList } from '@/components/ChapterList'
-import { SummaryCard } from '@/components/SummaryCard'
+import { SummaryCard, type SummaryStyle } from '@/components/SummaryCard'
 import { TranscriptViewer } from '@/components/TranscriptViewer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -181,11 +181,14 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
   /**
    * Regenerate summary functionality
    */
-  const handleRegenerateSummary = async () => {
+  const handleRegenerateSummary = async (style?: SummaryStyle) => {
     if (!videoData) return
 
     try {
-      console.log('🔄 Regenerating summary for video:', videoId)
+      console.log(
+        `🔄 Regenerating ${style || 'detailed'} summary for video:`,
+        videoId,
+      )
 
       // Call API to regenerate summary using transcript ID
       if (!videoData.id) {
@@ -199,6 +202,9 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            style: style || 'detailed',
+          }),
         },
       )
 
@@ -206,14 +212,27 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
         throw new Error('Failed to regenerate summary')
       }
 
-      const { summary } = await response.json()
+      const {
+        summary,
+        keyPoints,
+        topics,
+        confidence,
+        style: newStyle,
+      } = await response.json()
 
       setVideoData({
         ...videoData,
         summary: summary,
+        metadata: {
+          ...videoData.metadata,
+          topics: topics,
+          keyPoints: keyPoints,
+          summaryConfidence: confidence,
+          summaryStyle: newStyle,
+        },
       })
 
-      console.log('✅ Summary regenerated successfully')
+      console.log(`✅ ${newStyle} summary regenerated successfully`)
     } catch (error) {
       console.error('Failed to regenerate summary:', error)
       throw error
@@ -465,6 +484,10 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                       source: videoData.metadata.source,
                       language: videoData.metadata.language,
                     }}
+                    topics={videoData.metadata.topics}
+                    keyPoints={videoData.metadata.keyPoints}
+                    confidence={videoData.metadata.summaryConfidence}
+                    summaryStyle={videoData.metadata.summaryStyle}
                     onRegenerate={handleRegenerateSummary}
                   />
                 </TabsContent>

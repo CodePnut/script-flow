@@ -24,6 +24,7 @@ import ytdl from '@distube/ytdl-core'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import { aiSummaryService } from '@/lib/ai-summary'
 import { cache } from '@/lib/cache'
 import { getUserIdentifier } from '@/lib/ipHash'
 import { prisma } from '@/lib/prisma'
@@ -604,9 +605,56 @@ export async function POST(request: NextRequest) {
       })
     })
 
+    // Generate AI summary
+    console.log('🟡 Generating AI summary for transcript:', transcriptRecord.id)
+    let aiSummary = null
+    try {
+      aiSummary = await aiSummaryService.generateSummary(transcriptRecord.id)
+      console.log('✅ AI summary generated:', aiSummary)
+    } catch (error) {
+      console.warn(
+        '⚠️ AI summary generation failed, using basic summary:',
+        error,
+      )
+      // Fallback to basic summary if AI generation fails
+      aiSummary = {
+        summary:
+          result.results?.channels?.[0]?.alternatives?.[0]?.summaries?.[0]
+            ?.summary || 'Summary generation failed.',
+        keyPoints: [],
+        topics: [],
+        confidence: 0.5,
+        style: 'detailed' as const,
+        wordCount: 0,
+        generatedAt: new Date(),
+      }
+    }
+
+    // Update transcript with AI summary
+    const updatedTranscript = await prisma.transcript.update({
+      where: { id: transcriptRecord.id },
+      data: {
+        summary: aiSummary.summary,
+        metadata: {
+          source: 'deepgram',
+          model: DEEPGRAM_OPTIONS.model,
+          confidence: transcript.confidence,
+          diarization: DEEPGRAM_OPTIONS.diarize,
+          generatedAt: new Date().toISOString(),
+          // AI summary metadata
+          topics: aiSummary.topics,
+          keyPoints: aiSummary.keyPoints,
+          summaryConfidence: aiSummary.confidence,
+          summaryStyle: aiSummary.style,
+          aiSummaryGeneratedAt: new Date().toISOString(),
+        },
+      },
+    })
+    console.log('✅ Transcript updated with AI summary:', updatedTranscript.id)
+
     // Return successful response
     return NextResponse.json({
-      transcriptId: transcriptRecord.id,
+      transcriptId: updatedTranscript.id,
       videoId: videoId,
       title: videoInfo.videoDetails.title,
       status: 'completed',

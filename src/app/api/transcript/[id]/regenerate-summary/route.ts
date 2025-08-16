@@ -1,108 +1,33 @@
 /**
  * POST /api/transcript/[id]/regenerate-summary
  *
- * Regenerate summary and key points for an existing transcript
+ * Regenerate summary and key points for an existing transcript using AI-powered analysis
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
+import { aiSummaryService } from '@/lib/ai-summary'
 import { prisma } from '@/lib/prisma'
 
 /**
- * Generate a new summary from transcript utterances
+ * Request body validation schema
  */
-function generateSummaryFromTranscript(
-  utterances: Array<{ text: string }>,
-): string {
-  if (!utterances || utterances.length === 0) {
-    return 'No transcript content available for summary generation.'
-  }
-
-  // Extract all text from utterances
-  const fullText = utterances.map((u) => u.text).join(' ')
-
-  // Simple extractive summarization - get key sentences
-  const sentences = fullText.split(/[.!?]+/).filter((s) => s.trim().length > 20)
-
-  // Take every 5th sentence or important-looking sentences
-  const keySentences = sentences
-    .filter((sentence, index) => {
-      const lowerSentence = sentence.toLowerCase()
-      // Include sentences with important keywords or every 5th sentence
-      return (
-        index % 5 === 0 ||
-        lowerSentence.includes('important') ||
-        lowerSentence.includes('key') ||
-        lowerSentence.includes('main') ||
-        lowerSentence.includes('conclusion') ||
-        lowerSentence.includes('summary') ||
-        lowerSentence.includes('first') ||
-        lowerSentence.includes('finally') ||
-        lowerSentence.includes('overall')
-      )
-    })
-    .slice(0, 5) // Limit to 5 key sentences
-
-  if (keySentences.length === 0) {
-    // Fallback: take first few sentences
-    return sentences.slice(0, 3).join('. ') + '.'
-  }
-
-  return keySentences.join('. ').trim() + '.'
-}
+const regenerateSummarySchema = z.object({
+  style: z
+    .enum(['brief', 'detailed', 'bullet', 'executive', 'educational'])
+    .optional()
+    .default('detailed'),
+  maxLength: z.number().min(50).max(1000).optional(),
+  includeKeyPoints: z.boolean().optional().default(true),
+  focusOnTopics: z.array(z.string()).optional(),
+})
 
 /**
- * Generate key points from transcript
+ * POST /api/transcript/[id]/regenerate-summary
+ *
+ * Regenerate summary using AI-powered analysis of the entire transcript
  */
-function generateKeyPoints(utterances: Array<{ text: string }>): string[] {
-  if (!utterances || utterances.length === 0) {
-    return ['No transcript content available for key points generation.']
-  }
-
-  const fullText = utterances.map((u) => u.text).join(' ')
-  const sentences = fullText.split(/[.!?]+/).filter((s) => s.trim().length > 15)
-
-  // Look for sentences that seem like key points
-  const keyPointSentences = sentences
-    .filter((sentence) => {
-      const lowerSentence = sentence.toLowerCase()
-      return (
-        lowerSentence.includes('step') ||
-        lowerSentence.includes('point') ||
-        lowerSentence.includes('important') ||
-        lowerSentence.includes('remember') ||
-        lowerSentence.includes('key') ||
-        lowerSentence.includes('main') ||
-        lowerSentence.includes('first') ||
-        lowerSentence.includes('second') ||
-        lowerSentence.includes('third') ||
-        lowerSentence.includes('next') ||
-        lowerSentence.includes('finally') ||
-        sentence.trim().length > 30
-      )
-    })
-    .slice(0, 8) // Limit to 8 key points
-
-  if (keyPointSentences.length === 0) {
-    // Fallback: extract sentences from different parts of the transcript
-    const totalSentences = sentences.length
-    const keyPoints = []
-
-    for (let i = 0; i < Math.min(6, totalSentences); i++) {
-      const index = Math.floor((i / 6) * totalSentences)
-      if (sentences[index] && sentences[index].trim().length > 20) {
-        keyPoints.push(sentences[index].trim())
-      }
-    }
-
-    return keyPoints.length > 0
-      ? keyPoints
-      : ['Key points could not be extracted from this transcript.']
-  }
-
-  return keyPointSentences.map((s) => s.trim())
-}
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -110,9 +35,21 @@ export async function POST(
   try {
     const { id: transcriptId } = await params
 
-    // Fetch the transcript
+    // Parse and validate request body
+    let requestBody = {}
+    try {
+      requestBody = await request.json()
+    } catch {
+      // No body provided, use defaults
+    }
+
+    const { style, maxLength, includeKeyPoints, focusOnTopics } =
+      regenerateSummarySchema.parse(requestBody)
+
+    // Fetch the transcript to verify it exists
     const transcript = await prisma.transcript.findUnique({
       where: { id: transcriptId },
+      select: { id: true, status: true },
     })
 
     if (!transcript) {
@@ -122,42 +59,79 @@ export async function POST(
       )
     }
 
-    console.log('🔄 Regenerating summary for transcript:', transcriptId)
+    if (transcript.status !== 'completed') {
+      return NextResponse.json(
+        {
+          error: 'Transcript not ready',
+          status: transcript.status,
+          message: 'Transcript is still processing',
+        },
+        { status: 202 },
+      )
+    }
 
-    // Generate new summary from utterances
-    const utterances = Array.isArray(transcript.utterances)
-      ? (transcript.utterances as Array<{ text: string }>)
-      : []
-    const newSummary = generateSummaryFromTranscript(utterances)
+    console.log(
+      `🔄 Regenerating ${style} summary for transcript:`,
+      transcriptId,
+    )
 
-    // Generate new key points
-    const keyPoints = generateKeyPoints(utterances)
+    // Generate new summary using AI service
+    const summaryResult = await aiSummaryService.generateSummary(transcriptId, {
+      style,
+      maxLength,
+      includeKeyPoints,
+      focusOnTopics,
+    })
 
-    // Update the transcript with new summary
+    // Update the transcript with new summary and metadata
     await prisma.transcript.update({
       where: { id: transcriptId },
       data: {
-        summary: newSummary,
+        summary: summaryResult.summary,
         metadata: {
-          ...((transcript.metadata as Record<string, unknown>) || {}),
-          keyPoints,
-          lastSummaryRegeneration: new Date().toISOString(),
+          summaryStyle: summaryResult.style,
+          summaryConfidence: summaryResult.confidence,
+          summaryWordCount: summaryResult.wordCount,
+          keyPoints: summaryResult.keyPoints,
+          topics: summaryResult.topics,
+          lastSummaryRegeneration: summaryResult.generatedAt.toISOString(),
+          summaryGenerationParams: {
+            style,
+            maxLength,
+            includeKeyPoints,
+            focusOnTopics,
+          },
         },
       },
     })
 
     console.log(
-      '✅ Summary regenerated successfully for transcript:',
+      `✅ ${style} summary regenerated successfully for transcript:`,
       transcriptId,
     )
 
     return NextResponse.json({
-      summary: newSummary,
-      keyPoints,
-      message: 'Summary regenerated successfully',
+      summary: summaryResult.summary,
+      keyPoints: summaryResult.keyPoints,
+      topics: summaryResult.topics,
+      confidence: summaryResult.confidence,
+      style: summaryResult.style,
+      wordCount: summaryResult.wordCount,
+      message: `${style} summary regenerated successfully`,
     })
   } catch (error) {
     console.error('🔴 Error regenerating summary:', error)
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request parameters',
+          details: error.issues,
+        },
+        { status: 400 },
+      )
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to regenerate summary',

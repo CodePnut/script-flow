@@ -11,6 +11,10 @@ import {
   Download,
   Share2,
   RefreshCw,
+  Target,
+  TrendingUp,
+  Clock,
+  BarChart3,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -18,7 +22,18 @@ import { cn, formatDate } from '@/lib/utils'
 
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useToast } from './ui/use-toast'
+
+/**
+ * Summary style options
+ */
+export type SummaryStyle =
+  | 'brief'
+  | 'detailed'
+  | 'bullet'
+  | 'executive'
+  | 'educational'
 
 /**
  * SummaryCard component props interface
@@ -34,6 +49,14 @@ interface SummaryCardProps {
     source: string
     language: string
   }
+  /** AI-generated topics */
+  topics?: string[]
+  /** AI-generated key points */
+  keyPoints?: string[]
+  /** Summary confidence score (0-1) */
+  confidence?: number
+  /** Current summary style */
+  summaryStyle?: SummaryStyle
   /** Custom className for styling */
   className?: string
   /** Whether to show metadata section */
@@ -45,61 +68,30 @@ interface SummaryCardProps {
   /** Callback for share functionality */
   onShare?: () => void
   /** Callback for regenerate functionality */
-  onRegenerate?: () => void
-}
-
-/**
- * Key points interface for structured summaries
- */
-interface KeyPoint {
-  title: string
-  description: string
-  timestamp?: number
-}
-
-/**
- * Extract key points from summary text
- * Simple implementation - in production would use AI
- */
-function extractKeyPoints(summary: string): KeyPoint[] {
-  // Split by sentences and take first few as key points
-  const sentences = summary.split('. ').filter((s) => s.length > 20)
-
-  return sentences.slice(0, 3).map((sentence, index) => ({
-    title: `Key Point ${index + 1}`,
-    description: sentence.endsWith('.') ? sentence : sentence + '.',
-  }))
-}
-
-/**
- * Format duration from seconds to readable string
- */
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  }
-  return `${minutes}m`
+  onRegenerate?: (style?: SummaryStyle) => void
 }
 
 /**
  * SummaryCard Component
  *
- * Displays AI-generated video summary with metadata and copy functionality
+ * Displays AI-generated video summary with metadata, topics, and key points
  *
  * Features:
- * - Clean summary display
- * - Key points extraction
+ * - Multiple summary styles (brief, detailed, bullet, executive, educational)
+ * - AI-generated topics and key points
+ * - Confidence scoring
  * - Copy to clipboard functionality
  * - Video metadata display
- * - Responsive design
+ * - Responsive design with tabs
  * - Smooth animations
  */
 export function SummaryCard({
   summary,
   metadata,
+  topics = [],
+  keyPoints = [],
+  confidence,
+  summaryStyle = 'detailed',
   className,
   showMetadata = true,
   showCopyButton = true,
@@ -110,10 +102,8 @@ export function SummaryCard({
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const [activeTab, setActiveTab] = useState('summary')
   const { toast } = useToast()
-
-  // Extract key points from summary
-  const keyPoints = extractKeyPoints(summary)
 
   // Determine if summary should be truncated
   const shouldTruncate = summary.length > 300
@@ -127,9 +117,18 @@ export function SummaryCard({
     try {
       await navigator.clipboard.writeText(summary)
       setIsCopied(true)
+      toast({
+        title: 'Summary Copied',
+        description: 'Summary has been copied to your clipboard.',
+      })
       setTimeout(() => setIsCopied(false), 2000)
     } catch (error) {
       console.error('Failed to copy summary:', error)
+      toast({
+        title: 'Copy Failed',
+        description: 'Could not copy summary to clipboard.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -138,30 +137,10 @@ export function SummaryCard({
     if (onExport) {
       onExport()
     } else {
-      // Default export functionality
-      const exportData = {
-        title: metadata?.title || 'Video Summary',
-        summary,
-        keyPoints,
-        metadata,
-        exportedAt: new Date().toISOString(),
-      }
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json',
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${metadata?.title?.replace(/[^a-z0-9]/gi, '_') || 'summary'}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
       toast({
-        title: 'Summary Exported',
-        description: 'Summary has been downloaded as a JSON file.',
+        title: 'Export Not Available',
+        description: 'Export functionality is not implemented yet.',
+        variant: 'destructive',
       })
     }
   }
@@ -171,22 +150,18 @@ export function SummaryCard({
     if (onShare) {
       onShare()
     } else {
-      // Default share functionality
-      const shareText = `${metadata?.title || 'Video Summary'}\n\n${summary}`
-
       try {
         if (navigator.share) {
           await navigator.share({
             title: metadata?.title || 'Video Summary',
-            text: shareText,
+            text: summary,
             url: window.location.href,
           })
         } else {
-          // Fallback to clipboard
-          await navigator.clipboard.writeText(shareText)
+          await navigator.clipboard.writeText(window.location.href)
           toast({
-            title: 'Summary Copied',
-            description: 'Summary has been copied to clipboard.',
+            title: 'Link Copied',
+            description: 'Video link has been copied to your clipboard.',
           })
         }
       } catch (error) {
@@ -201,14 +176,14 @@ export function SummaryCard({
   }
 
   // Handle regenerate functionality
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (style?: SummaryStyle) => {
     if (onRegenerate) {
       setIsRegenerating(true)
       try {
-        await onRegenerate()
+        await onRegenerate(style)
         toast({
           title: 'Summary Regenerated',
-          description: 'A new summary has been generated.',
+          description: `A new ${style || summaryStyle} summary has been generated.`,
         })
       } catch {
         toast({
@@ -220,7 +195,6 @@ export function SummaryCard({
         setIsRegenerating(false)
       }
     } else {
-      // Show not implemented message
       toast({
         title: 'Feature Not Available',
         description: 'Summary regeneration is not implemented yet.',
@@ -229,21 +203,38 @@ export function SummaryCard({
     }
   }
 
+  // Get confidence color and text
+  const getConfidenceInfo = (conf: number) => {
+    if (conf >= 0.8)
+      return { color: 'text-green-600', text: 'High', icon: TrendingUp }
+    if (conf >= 0.6)
+      return { color: 'text-yellow-600', text: 'Medium', icon: Target }
+    return { color: 'text-red-600', text: 'Low', icon: BarChart3 }
+  }
+
+  const confidenceInfo =
+    confidence !== undefined ? getConfidenceInfo(confidence) : null
+
   return (
     <Card className={cn('h-full', className)}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Lightbulb className="h-5 w-5" />
-          AI Summary
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            AI Summary
+            {summaryStyle && (
+              <span className="text-sm font-normal text-muted-foreground capitalize">
+                ({summaryStyle})
+              </span>
+            )}
+          </CardTitle>
 
-        {showCopyButton && (
-          <div className="flex justify-end">
+          {showCopyButton && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCopy}
-              className="text-muted-fg hover:text-primary"
+              className="text-muted-foreground hover:text-primary"
             >
               {isCopied ? (
                 <>
@@ -257,102 +248,195 @@ export function SummaryCard({
                 </>
               )}
             </Button>
+          )}
+        </div>
+
+        {/* Confidence indicator */}
+        {confidenceInfo && confidence !== undefined && (
+          <div className="flex items-center gap-2 text-sm">
+            <confidenceInfo.icon className="h-4 w-4" />
+            <span className={confidenceInfo.color}>
+              Confidence: {confidenceInfo.text} ({(confidence * 100).toFixed(0)}
+              %)
+            </span>
+          </div>
+        )}
+
+        {/* Summary style selector */}
+        {onRegenerate && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {(
+              [
+                'brief',
+                'detailed',
+                'bullet',
+                'executive',
+                'educational',
+              ] as SummaryStyle[]
+            ).map((style) => (
+              <Button
+                key={style}
+                variant={style === summaryStyle ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleRegenerate(style)}
+                disabled={isRegenerating}
+                className="text-xs capitalize"
+              >
+                {style === summaryStyle && (
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                )}
+                {style}
+              </Button>
+            ))}
           </div>
         )}
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Main summary text */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <p className="text-fg leading-relaxed">{displaySummary}</p>
+        {/* Summary tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
+            <TabsTrigger value="summary" className="text-xs">
+              📊 Summary
+            </TabsTrigger>
+            <TabsTrigger value="topics" className="text-xs">
+              🎯 Topics
+            </TabsTrigger>
+            <TabsTrigger value="keypoints" className="text-xs">
+              💡 Key Points
+            </TabsTrigger>
+          </TabsList>
 
-            {shouldTruncate && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-2 text-primary hover:text-primary/80"
-              >
-                {isExpanded ? 'Show Less' : 'Read More'}
-              </Button>
-            )}
-          </div>
-        </motion.div>
+          <TabsContent value="summary" className="mt-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <p className="text-foreground leading-relaxed">
+                  {displaySummary}
+                </p>
 
-        {/* Key points section */}
-        {keyPoints.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <h3 className="text-sm font-semibold text-fg mb-3 flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Key Points
-            </h3>
+                {shouldTruncate && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="mt-2 text-primary hover:text-primary/80"
+                  >
+                    {isExpanded ? 'Show Less' : 'Read More'}
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          </TabsContent>
 
-            <div className="space-y-3">
-              {keyPoints.map((point, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 + index * 0.1 }}
-                  className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border/10"
-                >
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-primary">
-                      {index + 1}
-                    </span>
-                  </div>
+          <TabsContent value="topics" className="mt-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {topics.length > 0 ? (
+                <div className="space-y-3">
+                  {topics.map((topic, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-semibold text-primary">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <span className="text-foreground capitalize">
+                        {topic.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No topics identified yet.</p>
+                  <p className="text-sm">
+                    Try regenerating the summary to extract topics.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-fg leading-relaxed">
-                      {point.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+          <TabsContent value="keypoints" className="mt-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {keyPoints.length > 0 ? (
+                <div className="space-y-3">
+                  {keyPoints.map((point, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
+                        <span className="text-xs font-semibold text-primary">
+                          •
+                        </span>
+                      </div>
+                      <span className="text-foreground text-sm leading-relaxed">
+                        {point}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Lightbulb className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No key points extracted yet.</p>
+                  <p className="text-sm">
+                    Try regenerating the summary to extract key points.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
+        </Tabs>
 
         {/* Metadata section */}
         {showMetadata && metadata && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="pt-4 border-t border-border/10"
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="pt-4 border-t border-border"
           >
-            <h3 className="text-sm font-semibold text-fg mb-3">
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <FileText className="h-4 w-4" />
               Summary Details
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-2 text-muted-fg">
-                <FileText className="h-4 w-4" />
-                <span>Duration: {formatDuration(metadata.duration)}</span>
+            </h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Source:</span>
+                <span className="capitalize">{metadata.source}</span>
               </div>
-
-              <div className="flex items-center gap-2 text-muted-fg">
-                <User className="h-4 w-4" />
-                <span>Source: {metadata.source}</span>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Duration:</span>
+                <span>{Math.round(metadata.duration / 60)}m</span>
               </div>
-
-              <div className="flex items-center gap-2 text-muted-fg">
-                <Calendar className="h-4 w-4" />
-                <span>Generated: {formatDate(metadata.generatedAt)}</span>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Generated:</span>
+                <span>{formatDate(metadata.generatedAt)}</span>
               </div>
-
-              <div className="flex items-center gap-2 text-muted-fg">
-                <Lightbulb className="h-4 w-4" />
-                <span>Language: {metadata.language.toUpperCase()}</span>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Language:</span>
+                <span className="uppercase">{metadata.language}</span>
               </div>
             </div>
           </motion.div>
@@ -385,18 +469,20 @@ export function SummaryCard({
             Share
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={handleRegenerate}
-            disabled={isRegenerating}
-          >
-            <RefreshCw
-              className={cn('h-3 w-3 mr-1', isRegenerating && 'animate-spin')}
-            />
-            Regenerate
-          </Button>
+          {onRegenerate && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => handleRegenerate()}
+              disabled={isRegenerating}
+            >
+              <RefreshCw
+                className={cn('h-3 w-3 mr-1', isRegenerating && 'animate-spin')}
+              />
+              Regenerate
+            </Button>
+          )}
         </motion.div>
       </CardContent>
     </Card>
@@ -408,7 +494,7 @@ export function SummaryCard({
  */
 export const SummaryCardVariants = {
   /** Compact summary for smaller spaces */
-  Compact: (props: Omit<SummaryCardProps, 'className' | 'showMetadata'>) => (
+  Compact: (props: Omit<SummaryCardProps, 'className'>) => (
     <SummaryCard {...props} className="max-h-96" showMetadata={false} />
   ),
 

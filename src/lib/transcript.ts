@@ -45,6 +45,11 @@ export interface VideoData {
     language: string
     generatedAt: Date
     source: 'mock' | 'deepgram' | 'whisper'
+    // AI summary metadata
+    topics?: string[]
+    keyPoints?: string[]
+    summaryConfidence?: number
+    summaryStyle?: 'brief' | 'detailed' | 'bullet' | 'executive' | 'educational'
   }
 }
 

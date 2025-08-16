@@ -99,6 +99,19 @@ export async function GET(
         source:
           (transcript.metadata as { source?: 'mock' | 'deepgram' | 'whisper' })
             ?.source || 'deepgram',
+        // AI summary metadata
+        topics: (transcript.metadata as { topics?: string[] })?.topics,
+        keyPoints: (transcript.metadata as { keyPoints?: string[] })?.keyPoints,
+        summaryConfidence: (
+          transcript.metadata as { summaryConfidence?: number }
+        )?.summaryConfidence,
+        summaryStyle: (transcript.metadata as { summaryStyle?: string })
+          ?.summaryStyle as
+          | 'brief'
+          | 'detailed'
+          | 'bullet'
+          | 'executive'
+          | 'educational',
       },
     }
 
