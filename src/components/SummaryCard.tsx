@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import {
-  CheckCircle,
   Copy,
   FileText,
   Lightbulb,
@@ -10,7 +9,6 @@ import {
   Calendar,
   Download,
   Share2,
-  RefreshCw,
   Target,
   TrendingUp,
   Clock,
@@ -67,8 +65,6 @@ interface SummaryCardProps {
   onExport?: () => void
   /** Callback for share functionality */
   onShare?: () => void
-  /** Callback for regenerate functionality */
-  onRegenerate?: (style?: SummaryStyle) => void
 }
 
 /**
@@ -97,11 +93,9 @@ export function SummaryCard({
   showCopyButton = true,
   onExport,
   onShare,
-  onRegenerate,
 }: SummaryCardProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isRegenerating, setIsRegenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('summary')
   const { toast } = useToast()
 
@@ -175,34 +169,6 @@ export function SummaryCard({
     }
   }
 
-  // Handle regenerate functionality
-  const handleRegenerate = async (style?: SummaryStyle) => {
-    if (onRegenerate) {
-      setIsRegenerating(true)
-      try {
-        await onRegenerate(style)
-        toast({
-          title: 'Summary Regenerated',
-          description: `A new ${style || summaryStyle} summary has been generated.`,
-        })
-      } catch {
-        toast({
-          title: 'Regeneration Failed',
-          description: 'Could not regenerate summary. Please try again.',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsRegenerating(false)
-      }
-    } else {
-      toast({
-        title: 'Feature Not Available',
-        description: 'Summary regeneration is not implemented yet.',
-        variant: 'destructive',
-      })
-    }
-  }
-
   // Get confidence color and text
   const getConfidenceInfo = (conf: number) => {
     if (conf >= 0.8)
@@ -238,7 +204,7 @@ export function SummaryCard({
             >
               {isCopied ? (
                 <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <span className="mr-2">✓</span>
                   Copied!
                 </>
               ) : (
@@ -263,33 +229,7 @@ export function SummaryCard({
         )}
 
         {/* Summary style selector */}
-        {onRegenerate && (
-          <div className="flex flex-wrap gap-2 pt-2">
-            {(
-              [
-                'brief',
-                'detailed',
-                'bullet',
-                'executive',
-                'educational',
-              ] as SummaryStyle[]
-            ).map((style) => (
-              <Button
-                key={style}
-                variant={style === summaryStyle ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleRegenerate(style)}
-                disabled={isRegenerating}
-                className="text-xs capitalize"
-              >
-                {style === summaryStyle && (
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                )}
-                {style}
-              </Button>
-            ))}
-          </div>
-        )}
+        {/* Removed regenerate buttons */}
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -469,20 +409,7 @@ export function SummaryCard({
             Share
           </Button>
 
-          {onRegenerate && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => handleRegenerate()}
-              disabled={isRegenerating}
-            >
-              <RefreshCw
-                className={cn('h-3 w-3 mr-1', isRegenerating && 'animate-spin')}
-              />
-              Regenerate
-            </Button>
-          )}
+          {/* Removed regenerate button */}
         </motion.div>
       </CardContent>
     </Card>
