@@ -18,7 +18,7 @@ import { notFound } from 'next/navigation'
 import { useEffect, useRef, useState, use } from 'react'
 
 import { ChapterList } from '@/components/ChapterList'
-import { SummaryCard } from '@/components/SummaryCard'
+import { SummaryCard, type SummaryStyle } from '@/components/SummaryCard'
 import { TranscriptViewer } from '@/components/TranscriptViewer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -163,22 +163,79 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
   }
 
   /**
-   * Share functionality
+   * Share video functionality
    */
   const handleShare = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: videoData?.title || 'Video Transcript',
-          text: 'Check out this video transcript',
-          url: window.location.href,
-        })
-      } else {
-        await navigator.clipboard.writeText(window.location.href)
-        // You could add a toast notification here
+      await navigator.share({
+        title: videoData?.title || 'Video',
+        text: videoData?.summary || 'Check out this video',
+        url: window.location.href,
+      })
+    } catch {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(window.location.href)
+    }
+  }
+
+  /**
+   * Regenerate summary functionality
+   */
+  const handleRegenerateSummary = async (style?: SummaryStyle) => {
+    if (!videoData) return
+
+    try {
+      console.log(
+        `🔄 Regenerating ${style || 'detailed'} summary for video:`,
+        videoId,
+      )
+
+      // Call API to regenerate summary using transcript ID
+      if (!videoData.id) {
+        throw new Error('Transcript ID not available')
       }
+
+      const response = await fetch(
+        `/api/transcript/${videoData.id}/regenerate-summary`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            style: style || 'detailed',
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to regenerate summary')
+      }
+
+      const {
+        summary,
+        keyPoints,
+        topics,
+        confidence,
+        style: newStyle,
+      } = await response.json()
+
+      setVideoData({
+        ...videoData,
+        summary: summary,
+        metadata: {
+          ...videoData.metadata,
+          topics: topics,
+          keyPoints: keyPoints,
+          summaryConfidence: confidence,
+          summaryStyle: newStyle,
+        },
+      })
+
+      console.log(`✅ ${newStyle} summary regenerated successfully`)
     } catch (error) {
-      console.error('Failed to share:', error)
+      console.error('Failed to regenerate summary:', error)
+      throw error
     }
   }
 
@@ -431,6 +488,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                     keyPoints={videoData.metadata.keyPoints}
                     confidence={videoData.metadata.summaryConfidence}
                     summaryStyle={videoData.metadata.summaryStyle}
+                    onRegenerate={handleRegenerateSummary}
                   />
                 </TabsContent>
 

@@ -151,13 +151,7 @@ describe('AISummaryService', () => {
 
       mockPrisma.transcript.findUnique.mockResolvedValue(mockTranscript)
 
-      const styles = [
-        'brief',
-        'detailed',
-        'bullet',
-        'executive',
-        'educational',
-      ] as const
+      const styles = ['brief', 'detailed', 'executive', 'educational'] as const
 
       for (const style of styles) {
         const result = await aiSummaryService.generateSummary('test-id', {

@@ -15,7 +15,7 @@ import { prisma } from '@/lib/prisma'
  */
 const regenerateSummarySchema = z.object({
   style: z
-    .enum(['brief', 'detailed', 'bullet', 'executive', 'educational'])
+    .enum(['brief', 'detailed', 'executive', 'educational'])
     .optional()
     .default('detailed'),
   maxLength: z.number().min(50).max(1000).optional(),

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import {
+  CheckCircle,
   Copy,
   FileText,
   Lightbulb,
@@ -9,6 +10,7 @@ import {
   Calendar,
   Download,
   Share2,
+  RefreshCw,
   Target,
   TrendingUp,
   Clock,
@@ -24,14 +26,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useToast } from './ui/use-toast'
 
 /**
- * Summary style options
+ * Summary style options (removed bullet as requested)
  */
-export type SummaryStyle =
-  | 'brief'
-  | 'detailed'
-  | 'bullet'
-  | 'executive'
-  | 'educational'
+export type SummaryStyle = 'brief' | 'detailed' | 'executive' | 'educational'
 
 /**
  * SummaryCard component props interface
@@ -65,6 +62,8 @@ interface SummaryCardProps {
   onExport?: () => void
   /** Callback for share functionality */
   onShare?: () => void
+  /** Callback for regenerate functionality */
+  onRegenerate?: (style?: SummaryStyle) => void
 }
 
 /**
@@ -73,13 +72,13 @@ interface SummaryCardProps {
  * Displays AI-generated video summary with metadata, topics, and key points
  *
  * Features:
- * - Multiple summary styles (brief, detailed, bullet, executive, educational)
+ * - Multiple summary styles (brief, detailed, executive, educational)
  * - AI-generated topics and key points
  * - Confidence scoring
  * - Copy to clipboard functionality
  * - Video metadata display
- * - Responsive design with tabs
- * - Smooth animations
+ * - Responsive design with improved tab indicators
+ * - Hover effects and active states
  */
 export function SummaryCard({
   summary,
@@ -93,9 +92,11 @@ export function SummaryCard({
   showCopyButton = true,
   onExport,
   onShare,
+  onRegenerate,
 }: SummaryCardProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('summary')
   const { toast } = useToast()
 
@@ -169,6 +170,34 @@ export function SummaryCard({
     }
   }
 
+  // Handle regenerate functionality - now regenerates ALL content
+  const handleRegenerate = async (style?: SummaryStyle) => {
+    if (onRegenerate) {
+      setIsRegenerating(true)
+      try {
+        await onRegenerate(style)
+        toast({
+          title: 'Content Regenerated',
+          description: `Summary, topics, and key points have been regenerated in ${style || summaryStyle} style.`,
+        })
+      } catch {
+        toast({
+          title: 'Regeneration Failed',
+          description: 'Could not regenerate content. Please try again.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsRegenerating(false)
+      }
+    } else {
+      toast({
+        title: 'Feature Not Available',
+        description: 'Content regeneration is not implemented yet.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   // Get confidence color and text
   const getConfidenceInfo = (conf: number) => {
     if (conf >= 0.8)
@@ -200,11 +229,11 @@ export function SummaryCard({
               variant="ghost"
               size="sm"
               onClick={handleCopy}
-              className="text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary transition-colors"
             >
               {isCopied ? (
                 <>
-                  <span className="mr-2">✓</span>
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
                   Copied!
                 </>
               ) : (
@@ -228,21 +257,78 @@ export function SummaryCard({
           </div>
         )}
 
-        {/* Summary style selector */}
-        {/* Removed regenerate buttons */}
+        {/* Summary style selector - removed bullet */}
+        {onRegenerate && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {(
+              [
+                'brief',
+                'detailed',
+                'executive',
+                'educational',
+              ] as SummaryStyle[]
+            ).map((style) => (
+              <Button
+                key={style}
+                variant={style === summaryStyle ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleRegenerate(style)}
+                disabled={isRegenerating}
+                className={cn(
+                  'text-xs capitalize transition-all duration-200',
+                  style === summaryStyle
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'hover:bg-primary/10 hover:border-primary/50',
+                )}
+              >
+                {style === summaryStyle && (
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                )}
+                {style}
+              </Button>
+            ))}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Summary tabs */}
+        {/* Enhanced Summary tabs with better indicators */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
-            <TabsTrigger value="summary" className="text-xs">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-lg">
+            <TabsTrigger
+              value="summary"
+              className={cn(
+                'text-xs font-medium transition-all duration-200 rounded-md',
+                'data-[state=active]:bg-background data-[state=active]:text-foreground',
+                'data-[state=active]:shadow-sm data-[state=active]:border',
+                'hover:bg-background/50 hover:text-foreground/80',
+                activeTab === 'summary' && 'ring-2 ring-primary/20',
+              )}
+            >
               📊 Summary
             </TabsTrigger>
-            <TabsTrigger value="topics" className="text-xs">
+            <TabsTrigger
+              value="topics"
+              className={cn(
+                'text-xs font-medium transition-all duration-200 rounded-md',
+                'data-[state=active]:bg-background data-[state=active]:text-foreground',
+                'data-[state=active]:shadow-sm data-[state=active]:border',
+                'hover:bg-background/50 hover:text-foreground/80',
+                activeTab === 'topics' && 'ring-2 ring-primary/20',
+              )}
+            >
               🎯 Topics
             </TabsTrigger>
-            <TabsTrigger value="keypoints" className="text-xs">
+            <TabsTrigger
+              value="keypoints"
+              className={cn(
+                'text-xs font-medium transition-all duration-200 rounded-md',
+                'data-[state=active]:bg-background data-[state=active]:text-foreground',
+                'data-[state=active]:shadow-sm data-[state=active]:border',
+                'hover:bg-background/50 hover:text-foreground/80',
+                activeTab === 'keypoints' && 'ring-2 ring-primary/20',
+              )}
+            >
               💡 Key Points
             </TabsTrigger>
           </TabsList>
@@ -263,7 +349,7 @@ export function SummaryCard({
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="mt-2 text-primary hover:text-primary/80"
+                    className="mt-2 text-primary hover:text-primary/80 transition-colors"
                   >
                     {isExpanded ? 'Show Less' : 'Read More'}
                   </Button>
@@ -281,9 +367,12 @@ export function SummaryCard({
               {topics.length > 0 ? (
                 <div className="space-y-3">
                   {topics.map((topic, index) => (
-                    <div
+                    <motion.div
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
                     >
                       <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="text-sm font-semibold text-primary">
@@ -293,7 +382,7 @@ export function SummaryCard({
                       <span className="text-foreground capitalize">
                         {topic.replace(/_/g, ' ')}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
@@ -317,9 +406,12 @@ export function SummaryCard({
               {keyPoints.length > 0 ? (
                 <div className="space-y-3">
                   {keyPoints.map((point, index) => (
-                    <div
+                    <motion.div
                       key={index}
-                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
                     >
                       <div className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
                         <span className="text-xs font-semibold text-primary">
@@ -329,7 +421,7 @@ export function SummaryCard({
                       <span className="text-foreground text-sm leading-relaxed">
                         {point}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
@@ -392,7 +484,7 @@ export function SummaryCard({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs"
+            className="text-xs hover:bg-primary/10 hover:border-primary/50 transition-colors"
             onClick={handleExport}
           >
             <Download className="h-3 w-3 mr-1" />
@@ -402,14 +494,32 @@ export function SummaryCard({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs"
+            className="text-xs hover:bg-primary/10 hover:border-primary/50 transition-colors"
             onClick={handleShare}
           >
             <Share2 className="h-3 w-3 mr-1" />
             Share
           </Button>
 
-          {/* Removed regenerate button */}
+          {onRegenerate && (
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'text-xs transition-colors',
+                isRegenerating
+                  ? 'bg-primary/10 border-primary/50'
+                  : 'hover:bg-primary/10 hover:border-primary/50',
+              )}
+              onClick={() => handleRegenerate()}
+              disabled={isRegenerating}
+            >
+              <RefreshCw
+                className={cn('h-3 w-3 mr-1', isRegenerating && 'animate-spin')}
+              />
+              {isRegenerating ? 'Regenerating...' : 'Regenerate All'}
+            </Button>
+          )}
         </motion.div>
       </CardContent>
     </Card>

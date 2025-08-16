@@ -10,12 +10,7 @@ import { prisma } from './prisma'
 /**
  * Summary style options for different use cases
  */
-export type SummaryStyle =
-  | 'brief'
-  | 'detailed'
-  | 'bullet'
-  | 'executive'
-  | 'educational'
+export type SummaryStyle = 'brief' | 'detailed' | 'executive' | 'educational'
 
 /**
  * Summary generation parameters
@@ -347,8 +342,6 @@ export class AISummaryService {
         return this.generateBriefSummary(content, topics)
       case 'detailed':
         return this.generateDetailedSummary(content, topics)
-      case 'bullet':
-        return this.generateBulletSummary(content, topics)
       case 'executive':
         return this.generateExecutiveSummary(content, topics)
       case 'educational':
@@ -424,39 +417,6 @@ export class AISummaryService {
     }
 
     return summaryParts.join('. ').trim()
-  }
-
-  /**
-   * Generate bullet-point style summary
-   */
-  private generateBulletSummary(
-    content: ProcessedContent,
-    topics: TopicExtraction[],
-  ): string {
-    const bulletPoints: string[] = []
-
-    // Main topic bullet
-    if (topics[0]) {
-      bulletPoints.push(`• Main Focus: ${topics[0].topic}`)
-    }
-
-    // Key insights from top topics
-    topics.slice(0, 4).forEach((topic) => {
-      if (topic.relatedSentences.length > 0) {
-        const insight = this.extractInsight(topic.relatedSentences[0])
-        if (insight) {
-          bulletPoints.push(`• ${insight}`)
-        }
-      }
-    })
-
-    // Duration and content info
-    bulletPoints.push(
-      `• Duration: ${Math.round(content.totalDuration / 60)} minutes`,
-    )
-    bulletPoints.push(`• Content: ${content.utteranceCount} speech segments`)
-
-    return bulletPoints.join('\n')
   }
 
   /**
@@ -627,8 +587,6 @@ export class AISummaryService {
         return 150
       case 'detailed':
         return 300
-      case 'bullet':
-        return 200
       case 'executive':
         return 250
       case 'educational':
