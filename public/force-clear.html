@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Force Clear Service Worker</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        text-align: center;
+      }
+      .status {
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      button {
+        padding: 12px 24px;
+        font-size: 16px;
+        margin: 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧹 Force Clear Service Worker</h1>
+    <p>This page will completely remove all service workers and caches.</p>
+
+    <div id="status" class="status info">Checking service worker status...</div>
+
+    <button onclick="forceClear()" id="clearBtn">
+      🗑️ Force Clear Everything
+    </button>
+    <button onclick="checkStatus()" id="checkBtn">🔍 Check Status</button>
+    <button onclick="goHome()" id="homeBtn">🏠 Go to App</button>
+
+    <script>
+      function updateStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('status')
+        statusDiv.textContent = message
+        statusDiv.className = `status ${type}`
+      }
+
+      async function checkStatus() {
+        updateStatus('Checking service worker status...', 'info')
+
+        if ('serviceWorker' in navigator) {
+          try {
+            const registrations =
+              await navigator.serviceWorker.getRegistrations()
+            const cacheNames = await caches.keys()
+
+            if (registrations.length === 0 && cacheNames.length === 0) {
+              updateStatus(
+                '✅ All clear! No service workers or caches found.',
+                'success',
+              )
+            } else {
+              updateStatus(
+                `⚠️ Found ${registrations.length} service worker(s) and ${cacheNames.length} cache(s)`,
+                'error',
+              )
+            }
+          } catch (error) {
+            updateStatus(`❌ Error checking status: ${error.message}`, 'error')
+          }
+        } else {
+          updateStatus(
+            '❌ Service workers not supported in this browser',
+            'error',
+          )
+        }
+      }
+
+      async function forceClear() {
+        updateStatus('🧹 Clearing service workers and caches...', 'info')
+
+        try {
+          // Unregister all service workers
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          console.log(
+            `Found ${registrations.length} service workers to unregister`,
+          )
+
+          for (const registration of registrations) {
+            console.log('Unregistering:', registration.scope)
+            await registration.unregister()
+          }
+
+          // Clear all caches
+          const cacheNames = await caches.keys()
+          console.log(`Found ${cacheNames.length} caches to clear`)
+
+          for (const cacheName of cacheNames) {
+            console.log('Deleting cache:', cacheName)
+            await caches.delete(cacheName)
+          }
+
+          updateStatus(
+            '✅ Successfully cleared all service workers and caches!',
+            'success',
+          )
+
+          // Wait a moment then reload
+          setTimeout(() => {
+            updateStatus('🔄 Reloading page to ensure clean state...', 'info')
+            window.location.reload(true)
+          }, 2000)
+        } catch (error) {
+          updateStatus(`❌ Error during cleanup: ${error.message}`, 'error')
+          console.error('Cleanup error:', error)
+        }
+      }
+
+      function goHome() {
+        window.location.href = '/'
+      }
+
+      // Check status on page load
+      checkStatus()
+    </script>
+  </body>
+</html>

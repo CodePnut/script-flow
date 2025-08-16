@@ -185,14 +185,35 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
     if (!videoData) return
 
     try {
-      // For now, we'll simulate regeneration by adding a timestamp
-      // In a real implementation, this would call an API to regenerate the summary
-      const newSummary = `${videoData.summary}\n\n[Regenerated at ${new Date().toLocaleTimeString()}]`
+      console.log('🔄 Regenerating summary for video:', videoId)
+
+      // Call API to regenerate summary using transcript ID
+      if (!videoData.id) {
+        throw new Error('Transcript ID not available')
+      }
+
+      const response = await fetch(
+        `/api/transcript/${videoData.id}/regenerate-summary`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to regenerate summary')
+      }
+
+      const { summary } = await response.json()
 
       setVideoData({
         ...videoData,
-        summary: newSummary,
+        summary: summary,
       })
+
+      console.log('✅ Summary regenerated successfully')
     } catch (error) {
       console.error('Failed to regenerate summary:', error)
       throw error

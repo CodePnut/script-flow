@@ -32,6 +32,7 @@ export interface VideoChapter {
  * Complete video data structure
  */
 export interface VideoData {
+  id?: string // Transcript ID for API calls
   videoId: string
   title: string
   description: string

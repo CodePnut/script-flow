@@ -29,6 +29,7 @@ import type {
  * Mock data for testing
  */
 const mockVideoData: VideoData = {
+  id: 'mock-transcript-id',
   videoId: 'dQw4w9WgXcQ',
   title: 'Modern Web Development with React & Next.js',
   description:
@@ -130,6 +131,7 @@ export async function GET(
 
     // Convert database format to frontend VideoData format
     const videoData: VideoData = {
+      id: transcript.id, // Add transcript ID for API calls
       videoId: transcript.videoId,
       title: transcript.title,
       description: transcript.description || '',

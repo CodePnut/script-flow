@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Debug Thumbnails</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ccc;
+      }
+      .thumbnail {
+        margin: 10px;
+        border: 1px solid #ddd;
+      }
+      .error {
+        color: red;
+      }
+      .success {
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Thumbnail Debug Page</h1>
+
+    <div class="test-section">
+      <h2>Service Worker Status</h2>
+      <div id="sw-status">Checking...</div>
+      <button onclick="clearServiceWorker()">Clear Service Worker</button>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Known Video IDs</h2>
+      <div id="thumbnail-tests"></div>
+    </div>
+
+    <script>
+      // Test video IDs (known working YouTube videos)
+      const testVideoIds = [
+        'dQw4w9WgXcQ', // Rick Roll - always available
+        'jNQXAC9IVRw', // Me at the zoo - first YouTube video
+        'kJQP7kiw5Fk', // Despacito
+      ]
+
+      // Check service worker status
+      function checkServiceWorker() {
+        const statusDiv = document.getElementById('sw-status')
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            if (registrations.length > 0) {
+              statusDiv.innerHTML = `<span class="error">⚠️ ${registrations.length} service worker(s) active</span>`
+              registrations.forEach((reg, i) => {
+                statusDiv.innerHTML += `<br>SW ${i + 1}: ${reg.scope}`
+              })
+            } else {
+              statusDiv.innerHTML =
+                '<span class="success">✅ No service workers active</span>'
+            }
+          })
+        } else {
+          statusDiv.innerHTML =
+            '<span class="error">❌ Service workers not supported</span>'
+        }
+      }
+
+      // Clear service worker
+      function clearServiceWorker() {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker
+            .getRegistrations()
+            .then((registrations) => {
+              const promises = registrations.map((reg) => reg.unregister())
+              return Promise.all(promises)
+            })
+            .then(() => {
+              return caches.keys()
+            })
+            .then((cacheNames) => {
+              return Promise.all(cacheNames.map((name) => caches.delete(name)))
+            })
+            .then(() => {
+              alert('Service worker and caches cleared!')
+              checkServiceWorker()
+            })
+        }
+      }
+
+      // Test thumbnails
+      function testThumbnails() {
+        const container = document.getElementById('thumbnail-tests')
+        container.innerHTML = ''
+
+        testVideoIds.forEach((videoId) => {
+          const section = document.createElement('div')
+          section.innerHTML = `<h3>Video ID: ${videoId}</h3>`
+
+          const qualities = [
+            'mqdefault',
+            'hqdefault',
+            'default',
+            'maxresdefault',
+          ]
+
+          qualities.forEach((quality) => {
+            const url = `https://img.youtube.com/vi/${videoId}/${quality}.jpg`
+            const img = document.createElement('img')
+            img.src = url
+            img.className = 'thumbnail'
+            img.style.maxWidth = '160px'
+            img.alt = `${quality} thumbnail`
+
+            const label = document.createElement('div')
+            label.textContent = `${quality}: Loading...`
+
+            img.onload = () => {
+              label.innerHTML = `<span class="success">✅ ${quality}: Loaded</span>`
+            }
+
+            img.onerror = () => {
+              label.innerHTML = `<span class="error">❌ ${quality}: Failed</span>`
+              img.style.display = 'none'
+            }
+
+            section.appendChild(label)
+            section.appendChild(img)
+          })
+
+          container.appendChild(section)
+        })
+      }
+
+      // Initialize
+      checkServiceWorker()
+      testThumbnails()
+
+      // Test fetch directly
+      console.log('Testing direct fetch...')
+      fetch('https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg', {
+        mode: 'no-cors',
+      })
+        .then(() => console.log('✅ Direct fetch successful'))
+        .catch((err) => console.error('❌ Direct fetch failed:', err))
+    </script>
+  </body>
+</html>

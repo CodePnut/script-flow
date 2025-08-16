@@ -57,6 +57,26 @@ function VideoItem({ video, index, onRemove }: VideoItemProps) {
                   height={90}
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                   unoptimized
+                  onError={(e) => {
+                    console.error(
+                      'Thumbnail failed to load:',
+                      video.thumbnailUrl,
+                    )
+                    console.error('Video ID:', video.videoId)
+                    // Fallback to a different thumbnail quality
+                    const target = e.target as HTMLImageElement
+                    if (target.src.includes('mqdefault')) {
+                      target.src = `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`
+                    } else if (target.src.includes('hqdefault')) {
+                      target.src = `https://img.youtube.com/vi/${video.videoId}/default.jpg`
+                    }
+                  }}
+                  onLoad={() => {
+                    console.log(
+                      'Thumbnail loaded successfully:',
+                      video.thumbnailUrl,
+                    )
+                  }}
                 />
                 {/* Play overlay */}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

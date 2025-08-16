@@ -97,11 +97,17 @@ async function createRedisClient(): Promise<RedisClient | null> {
 
     return client
   } catch (error) {
-    console.warn(
-      '🟡 Failed to initialize Redis client:',
-      error instanceof Error ? error.message : 'Unknown error',
-    )
-    console.log('📝 Application will continue without caching')
+    // Only log in development or when explicitly requested
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_LOGGING === 'true'
+    ) {
+      console.warn(
+        '🟡 Failed to initialize Redis client:',
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+      console.log('📝 Application will continue without caching')
+    }
     return null
   }
 }
@@ -143,10 +149,16 @@ export async function getRedisClient(): Promise<RedisClient | null> {
 
     return redisClient
   } catch (error) {
-    console.warn(
-      '🟡 Redis connection failed, disabling for this session:',
-      error,
-    )
+    // Only log in development or when explicitly requested
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_LOGGING === 'true'
+    ) {
+      console.warn(
+        '🟡 Redis connection failed, disabling for this session:',
+        error,
+      )
+    }
     redisConnectionFailed = true
     redisInitialized = true
     return null

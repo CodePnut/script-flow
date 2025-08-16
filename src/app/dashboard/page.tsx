@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react'
 
 import { CacheStatus } from '@/components/CacheStatus'
 import { DatabaseMonitor } from '@/components/DatabaseMonitor'
+import { OfflineStatus } from '@/components/OfflineStatus'
 import { TranscriptTable } from '@/components/TranscriptTable'
 import { useToast } from '@/components/ui/use-toast'
 import { type VideoHistoryItem } from '@/hooks/useHistoryStore'
@@ -138,6 +139,7 @@ export default function DashboardPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="lg:col-span-1 space-y-6"
           >
+            <OfflineStatus showDetails />
             <CacheStatus />
             <DatabaseMonitor />
           </motion.div>

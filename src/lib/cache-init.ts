@@ -61,14 +61,26 @@ export async function initializeCache(): Promise<void> {
           // Ignore health check errors
         })
     } else {
-      console.log('🟡 Redis not available, running without cache')
+      // Only log in development or when explicitly requested
+      if (
+        process.env.NODE_ENV === 'development' ||
+        process.env.VERBOSE_LOGGING === 'true'
+      ) {
+        console.log('🟡 Redis not available, running without cache')
+      }
     }
   } catch (error) {
-    console.warn(
-      '🟡 Cache initialization failed:',
-      error instanceof Error ? error.message : 'Unknown error',
-    )
-    console.log('📝 Application will continue without caching')
+    // Only log in development or when explicitly requested
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_LOGGING === 'true'
+    ) {
+      console.warn(
+        '🟡 Cache initialization failed:',
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+      console.log('📝 Application will continue without caching')
+    }
   }
 }
 

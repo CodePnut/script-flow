@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Test YouTube Thumbnails</title>
+  </head>
+  <body>
+    <h1>YouTube Thumbnail Test</h1>
+
+    <h2>Test Video ID: dQw4w9WgXcQ</h2>
+
+    <div style="margin: 20px 0">
+      <h3>mqdefault.jpg (medium quality)</h3>
+      <img
+        src="https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg"
+        alt="Medium Quality Thumbnail"
+        style="border: 1px solid #ccc; max-width: 320px"
+        onload="console.log('mqdefault loaded successfully')"
+        onerror="console.error('mqdefault failed to load')"
+      />
+    </div>
+
+    <div style="margin: 20px 0">
+      <h3>maxresdefault.jpg (max quality)</h3>
+      <img
+        src="https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+        alt="Max Quality Thumbnail"
+        style="border: 1px solid #ccc; max-width: 320px"
+        onload="console.log('maxresdefault loaded successfully')"
+        onerror="console.error('maxresdefault failed to load')"
+      />
+    </div>
+
+    <div style="margin: 20px 0">
+      <h3>hqdefault.jpg (high quality)</h3>
+      <img
+        src="https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+        alt="High Quality Thumbnail"
+        style="border: 1px solid #ccc; max-width: 320px"
+        onload="console.log('hqdefault loaded successfully')"
+        onerror="console.error('hqdefault failed to load')"
+      />
+    </div>
+
+    <script>
+      // Test fetch to see if there are CORS issues
+      fetch('https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg', {
+        mode: 'no-cors',
+      })
+        .then(() => console.log('Fetch test successful'))
+        .catch((err) => console.error('Fetch test failed:', err))
+    </script>
+  </body>
+</html>

@@ -473,29 +473,68 @@ export function TranscriptViewer({
               </DialogContent>
             </Dialog>
 
-            {/* Auto-scroll status indicator */}
-            <div className="flex items-center gap-2 text-xs">
-              {isAutoScrollEnabled ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center gap-1 text-green-600 dark:text-green-400"
-                >
-                  <ScrollText className="h-3 w-3" />
-                  <span>Auto-scroll</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
-                >
-                  <PauseCircle className="h-3 w-3" />
-                  <span>
-                    {countdown > 0 ? `Paused (${countdown}s)` : 'Scroll paused'}
-                  </span>
-                </motion.div>
-              )}
+            {/* Auto-scroll toggle and status */}
+            <div className="flex items-center gap-2">
+              {/* Toggle button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsAutoScrollEnabled(!isAutoScrollEnabled)
+                  // Clear any existing countdown when manually toggling
+                  setCountdown(0)
+                  pauseUntilRef.current = null
+                  if (reenableTimeoutRef.current) {
+                    clearTimeout(reenableTimeoutRef.current)
+                    reenableTimeoutRef.current = null
+                  }
+                }}
+                className="h-8 px-2 text-xs"
+                title={
+                  isAutoScrollEnabled
+                    ? 'Disable auto-scroll'
+                    : 'Enable auto-scroll'
+                }
+              >
+                {isAutoScrollEnabled ? (
+                  <>
+                    <PauseCircle className="h-3 w-3 mr-1" />
+                    Disable
+                  </>
+                ) : (
+                  <>
+                    <ScrollText className="h-3 w-3 mr-1" />
+                    Enable
+                  </>
+                )}
+              </Button>
+
+              {/* Status indicator */}
+              <div className="flex items-center gap-1 text-xs">
+                {isAutoScrollEnabled ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-1 text-green-600 dark:text-green-400"
+                  >
+                    <ScrollText className="h-3 w-3" />
+                    <span>Auto-scroll</span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
+                  >
+                    <PauseCircle className="h-3 w-3" />
+                    <span>
+                      {countdown > 0
+                        ? `Paused (${countdown}s)`
+                        : 'Scroll paused'}
+                    </span>
+                  </motion.div>
+                )}
+              </div>
             </div>
           </div>
         </div>

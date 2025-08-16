@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 import * as z from 'zod'
 
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { queue } from '@/lib/offline-queue'
+import { serviceWorker } from '@/lib/service-worker'
 
 // YouTube URL validation schema
 const formSchema = z.object({
@@ -52,6 +55,24 @@ export function URLForm({ onSubmit, className }: URLFormProps) {
     setIsLoading(true)
 
     try {
+      // Check if we're online
+      const isOnline = serviceWorker.isOnline()
+
+      if (!isOnline) {
+        // Queue for offline processing
+        await queue.queueTranscription(values.url)
+
+        toast.success('📝 Transcription queued', {
+          description:
+            "Your request has been queued and will be processed when you're back online.",
+          duration: 5000,
+        })
+
+        // Reset form
+        form.reset()
+        return
+      }
+
       // Add slight delay for user experience
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -63,6 +84,9 @@ export function URLForm({ onSubmit, className }: URLFormProps) {
       }
     } catch (error) {
       console.error('Error submitting URL:', error)
+      toast.error('❌ Submission failed', {
+        description: 'Please try again or check your connection.',
+      })
     } finally {
       setIsLoading(false)
     }
