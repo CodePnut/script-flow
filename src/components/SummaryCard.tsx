@@ -44,8 +44,7 @@ interface SummaryCardProps {
     source: string
     language: string
   }
-  /** AI-generated topics */
-  topics?: string[]
+
   /** AI-generated key points */
   keyPoints?: string[]
   /** Summary confidence score (0-1) */
@@ -83,7 +82,6 @@ interface SummaryCardProps {
 export function SummaryCard({
   summary,
   metadata,
-  topics = [],
   keyPoints = [],
   confidence,
   summaryStyle = 'detailed',
@@ -292,9 +290,9 @@ export function SummaryCard({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Enhanced Summary tabs with better indicators */}
+        {/* Simplified Summary tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-lg">
             <TabsTrigger
               value="summary"
               className={cn(
@@ -306,18 +304,6 @@ export function SummaryCard({
               )}
             >
               📊 Summary
-            </TabsTrigger>
-            <TabsTrigger
-              value="topics"
-              className={cn(
-                'text-xs font-medium transition-all duration-200 rounded-md',
-                'data-[state=active]:bg-background data-[state=active]:text-foreground',
-                'data-[state=active]:shadow-sm data-[state=active]:border',
-                'hover:bg-background/50 hover:text-foreground/80',
-                activeTab === 'topics' && 'ring-2 ring-primary/20',
-              )}
-            >
-              🎯 Topics
             </TabsTrigger>
             <TabsTrigger
               value="keypoints"
@@ -358,45 +344,6 @@ export function SummaryCard({
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="topics" className="mt-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {topics.length > 0 ? (
-                <div className="space-y-3">
-                  {topics.map((topic, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-semibold text-primary">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <span className="text-foreground capitalize">
-                        {topic.replace(/_/g, ' ')}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No topics identified yet.</p>
-                  <p className="text-sm">
-                    Try regenerating the summary to extract topics.
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
           <TabsContent value="keypoints" className="mt-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -405,20 +352,24 @@ export function SummaryCard({
             >
               {keyPoints.length > 0 ? (
                 <div className="space-y-3">
+                  <div className="text-sm text-muted-foreground mb-3 text-center">
+                    <strong>5 Key Insights</strong> extracted from the video
+                    content
+                  </div>
                   {keyPoints.map((point, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer group"
                     >
-                      <div className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
+                      <div className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 group-hover:bg-primary/20 transition-colors">
                         <span className="text-xs font-semibold text-primary">
-                          •
+                          {index + 1}
                         </span>
                       </div>
-                      <span className="text-foreground text-sm leading-relaxed">
+                      <span className="text-foreground text-sm leading-relaxed group-hover:text-primary/90 transition-colors">
                         {point}
                       </span>
                     </motion.div>

@@ -215,7 +215,6 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
       const {
         summary,
         keyPoints,
-        topics,
         confidence,
         style: newStyle,
       } = await response.json()
@@ -225,7 +224,6 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
         summary: summary,
         metadata: {
           ...videoData.metadata,
-          topics: topics,
           keyPoints: keyPoints,
           summaryConfidence: confidence,
           summaryStyle: newStyle,
@@ -484,7 +482,6 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                       source: videoData.metadata.source,
                       language: videoData.metadata.language,
                     }}
-                    topics={videoData.metadata.topics}
                     keyPoints={videoData.metadata.keyPoints}
                     confidence={videoData.metadata.summaryConfidence}
                     summaryStyle={videoData.metadata.summaryStyle}

@@ -49,7 +49,7 @@ export interface VideoData {
     topics?: string[]
     keyPoints?: string[]
     summaryConfidence?: number
-    summaryStyle?: 'brief' | 'detailed' | 'bullet' | 'executive' | 'educational'
+    summaryStyle?: 'brief' | 'detailed' | 'executive' | 'educational'
   }
 }
 

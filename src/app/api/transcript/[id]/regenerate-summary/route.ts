@@ -93,7 +93,7 @@ export async function POST(
           summaryConfidence: summaryResult.confidence,
           summaryWordCount: summaryResult.wordCount,
           keyPoints: summaryResult.keyPoints,
-          topics: summaryResult.topics,
+
           lastSummaryRegeneration: summaryResult.generatedAt.toISOString(),
           summaryGenerationParams: {
             style,
@@ -113,7 +113,7 @@ export async function POST(
     return NextResponse.json({
       summary: summaryResult.summary,
       keyPoints: summaryResult.keyPoints,
-      topics: summaryResult.topics,
+
       confidence: summaryResult.confidence,
       style: summaryResult.style,
       wordCount: summaryResult.wordCount,
