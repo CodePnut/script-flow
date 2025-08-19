@@ -443,6 +443,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                 currentTime={currentTime}
                 onTimestampClick={handleTimestampClick}
                 maxParagraphLength={300}
+                isVideoPlaying={isPlaying}
               />
             </div>
           </motion.div>

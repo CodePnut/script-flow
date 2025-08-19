@@ -48,6 +48,8 @@ interface TranscriptViewerProps {
   autoScroll?: boolean
   /** Maximum characters per paragraph grouping */
   maxParagraphLength?: number
+  /** Whether the video is currently playing */
+  isVideoPlaying?: boolean
 }
 
 /**
@@ -174,6 +176,7 @@ export function TranscriptViewer({
   className,
   autoScroll = true,
   maxParagraphLength = 200,
+  isVideoPlaying = false,
 }: TranscriptViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeSegment, setActiveSegment] = useState<TranscriptSegment | null>(
@@ -202,6 +205,9 @@ export function TranscriptViewer({
     if (!container) return
 
     const startOrExtendPause = () => {
+      // Only pause auto-scroll if video is playing and auto-scroll is enabled
+      if (!isVideoPlaying || !isAutoScrollEnabled) return
+
       // Set to paused immediately and extend pause window on each activity
       if (reenableTimeoutRef.current) {
         clearTimeout(reenableTimeoutRef.current)
@@ -286,13 +292,14 @@ export function TranscriptViewer({
         countdownIntervalRef.current = null
       }
     }
-  }, [])
+  }, [isVideoPlaying, isAutoScrollEnabled]) // Add dependencies
 
-  // Auto-scroll to active segment (only when enabled and not user-scrolling)
+  // Auto-scroll to active segment (only when enabled, video is playing, and not user-scrolling)
   useEffect(() => {
     if (
       autoScroll &&
       isAutoScrollEnabled &&
+      isVideoPlaying && // Only auto-scroll when video is playing
       activeSegment &&
       containerRef.current
     ) {
@@ -307,7 +314,7 @@ export function TranscriptViewer({
         })
       }
     }
-  }, [activeSegment, autoScroll, isAutoScrollEnabled])
+  }, [activeSegment, autoScroll, isAutoScrollEnabled, isVideoPlaying])
 
   // Group segments into paragraphs for better readability
   const paragraphs = groupSegmentsIntoParagraphs(segments, maxParagraphLength)
@@ -402,11 +409,6 @@ export function TranscriptViewer({
             <p className="text-sm text-muted-fg">
               Click any text to jump to that moment in the video
             </p>
-            {!isAutoScrollEnabled && countdown > 0 && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                Auto-scroll resumes in {countdown}s
-              </p>
-            )}
           </div>
 
           {/* Auto-scroll status and actions */}
@@ -480,13 +482,21 @@ export function TranscriptViewer({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setIsAutoScrollEnabled(!isAutoScrollEnabled)
+                  const newState = !isAutoScrollEnabled
+                  setIsAutoScrollEnabled(newState)
+
                   // Clear any existing countdown when manually toggling
                   setCountdown(0)
                   pauseUntilRef.current = null
+
                   if (reenableTimeoutRef.current) {
                     clearTimeout(reenableTimeoutRef.current)
                     reenableTimeoutRef.current = null
+                  }
+
+                  if (countdownIntervalRef.current) {
+                    clearInterval(countdownIntervalRef.current)
+                    countdownIntervalRef.current = null
                   }
                 }}
                 className="h-8 px-2 text-xs"
@@ -509,32 +519,34 @@ export function TranscriptViewer({
                 )}
               </Button>
 
-              {/* Status indicator */}
-              <div className="flex items-center gap-1 text-xs">
-                {isAutoScrollEnabled ? (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-1 text-green-600 dark:text-green-400"
-                  >
-                    <ScrollText className="h-3 w-3" />
-                    <span>Auto-scroll</span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
-                  >
-                    <PauseCircle className="h-3 w-3" />
-                    <span>
-                      {countdown > 0
-                        ? `Paused (${countdown}s)`
-                        : 'Scroll paused'}
-                    </span>
-                  </motion.div>
-                )}
-              </div>
+              {/* Status indicator - only show when video is playing */}
+              {isVideoPlaying && (
+                <div className="flex items-center gap-1 text-xs">
+                  {isAutoScrollEnabled ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-1 text-green-600 dark:text-green-400"
+                    >
+                      <ScrollText className="h-3 w-3" />
+                      <span>Auto-scroll</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
+                    >
+                      <PauseCircle className="h-3 w-3" />
+                      <span>
+                        {countdown > 0
+                          ? `Paused (${countdown}s)`
+                          : 'Scroll paused'}
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
