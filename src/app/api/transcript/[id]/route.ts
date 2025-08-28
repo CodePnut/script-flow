@@ -106,12 +106,7 @@ export async function GET(
           transcript.metadata as { summaryConfidence?: number }
         )?.summaryConfidence,
         summaryStyle: (transcript.metadata as { summaryStyle?: string })
-          ?.summaryStyle as
-          | 'brief'
-          | 'detailed'
-          | 'bullet'
-          | 'executive'
-          | 'educational',
+          ?.summaryStyle as 'brief' | 'detailed' | 'executive' | 'educational',
       },
     }
 

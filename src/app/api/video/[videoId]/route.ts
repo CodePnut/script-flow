@@ -26,64 +26,12 @@ import type {
 } from '@/lib/transcript'
 
 /**
- * Mock data for testing
+ * Type definition for transcript metadata from database
  */
-const mockVideoData: VideoData = {
-  id: 'mock-transcript-id',
-  videoId: 'dQw4w9WgXcQ',
-  title: 'Modern Web Development with React & Next.js',
-  description:
-    'A comprehensive tutorial on modern web development using React and Next.js',
-  duration: 1800, // 30 minutes
-  thumbnailUrl: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
-  transcript: [
-    {
-      id: 'seg-1',
-      start: 0,
-      end: 5,
-      text: 'Welcome to this comprehensive tutorial on modern web development',
-      speaker: 'Speaker',
-      confidence: 0.95,
-    },
-    {
-      id: 'seg-2',
-      start: 5,
-      end: 10,
-      text: "Today we'll be exploring React and Next.js",
-      speaker: 'Speaker',
-      confidence: 0.95,
-    },
-  ],
-  summary:
-    'This tutorial provides a complete introduction to modern web development using React and Next.js. We cover everything from basic concepts to advanced patterns.',
-  chapters: [
-    {
-      id: 'chapter-1',
-      title: 'Introduction',
-      start: 0,
-      end: 300,
-      description: 'Introduction to the course and setup',
-    },
-    {
-      id: 'chapter-2',
-      title: 'Environment Setup',
-      start: 300,
-      end: 600,
-      description: 'Setting up the development environment',
-    },
-    {
-      id: 'chapter-3',
-      title: 'Creating the Project',
-      start: 600,
-      end: 900,
-      description: 'Creating a new Next.js project',
-    },
-  ],
-  metadata: {
-    language: 'en',
-    generatedAt: new Date(),
-    source: 'mock',
-  },
+interface TranscriptMetadata {
+  keyPoints?: string[]
+  summaryConfidence?: number
+  [key: string]: unknown
 }
 
 /**
@@ -103,11 +51,6 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid video ID' }, { status: 400 })
     }
 
-    // Return mock data for test video ID
-    if (videoId === 'dQw4w9WgXcQ') {
-      return NextResponse.json(mockVideoData)
-    }
-
     // Try to get video data from cache first
     console.log(`🔍 Checking cache for video: ${videoId}`)
     const cachedVideoData = await cache.getVideoMetadata(videoId)
@@ -117,12 +60,13 @@ export async function GET(
       return NextResponse.json(cachedVideoData)
     }
 
+    // Cache miss - fetch from database
     console.log(`🔍 Cache miss for video: ${videoId}, fetching from database`)
 
-    // Fetch the most recent completed transcript for this video using optimized query
     const transcript = await optimizedQueries.findTranscript(videoId)
 
     if (!transcript) {
+      console.log(`❌ Video not found: ${videoId}`)
       return NextResponse.json(
         { error: 'Video not found or not transcribed yet' },
         { status: 404 },
@@ -131,27 +75,28 @@ export async function GET(
 
     // Convert database format to frontend VideoData format
     const videoData: VideoData = {
-      id: transcript.id, // Add transcript ID for API calls
+      id: transcript.id,
       videoId: transcript.videoId,
       title: transcript.title,
       description: transcript.description || '',
       duration: transcript.duration || 0,
-      thumbnailUrl: `https://img.youtube.com/vi/${transcript.videoId}/maxresdefault.jpg`,
+      thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
       transcript: convertUtterancesToSegments(transcript.utterances),
-      summary: transcript.summary || '',
+      summary: transcript.summary || 'No summary available',
       chapters: convertChaptersToVideoChapters(transcript.chapters),
       metadata: {
-        language: transcript.language,
-        generatedAt: transcript.createdAt,
-        source:
-          (transcript.metadata as { source?: 'mock' | 'deepgram' | 'whisper' })
-            ?.source || 'deepgram',
+        language: transcript.language || 'en',
+        generatedAt: transcript.createdAt || new Date(),
+        source: 'deepgram',
+        keyPoints: (transcript.metadata as TranscriptMetadata)?.keyPoints || [],
+        summaryConfidence:
+          (transcript.metadata as TranscriptMetadata)?.summaryConfidence || 0.8,
       },
     }
 
-    // Cache the video data for future requests
-    console.log(`💾 Caching video data for: ${videoId}`)
+    // Cache the result
     await cache.setVideoMetadata(videoId, videoData)
+    console.log(`💾 Cached video data for: ${videoId}`)
 
     return NextResponse.json(videoData)
   } catch (error) {

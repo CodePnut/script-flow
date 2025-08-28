@@ -215,11 +215,6 @@ export function SummaryCard({
           <CardTitle className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5" />
             AI Summary
-            {summaryStyle && (
-              <span className="text-sm font-normal text-muted-foreground capitalize">
-                ({summaryStyle})
-              </span>
-            )}
           </CardTitle>
 
           {showCopyButton && (
@@ -255,36 +250,21 @@ export function SummaryCard({
           </div>
         )}
 
-        {/* Summary style selector - removed bullet */}
+        {/* Regenerate button */}
         {onRegenerate && (
-          <div className="flex flex-wrap gap-2 pt-2">
-            {(
-              [
-                'brief',
-                'detailed',
-                'executive',
-                'educational',
-              ] as SummaryStyle[]
-            ).map((style) => (
-              <Button
-                key={style}
-                variant={style === summaryStyle ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleRegenerate(style)}
-                disabled={isRegenerating}
-                className={cn(
-                  'text-xs capitalize transition-all duration-200',
-                  style === summaryStyle
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'hover:bg-primary/10 hover:border-primary/50',
-                )}
-              >
-                {style === summaryStyle && (
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                )}
-                {style}
-              </Button>
-            ))}
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleRegenerate()}
+              disabled={isRegenerating}
+              className="text-xs transition-all duration-200 hover:bg-primary/10 hover:border-primary/50"
+            >
+              <RefreshCw
+                className={cn('h-3 w-3 mr-1', isRegenerating && 'animate-spin')}
+              />
+              Regenerate Summary
+            </Button>
           </div>
         )}
       </CardHeader>

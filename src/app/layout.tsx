@@ -23,11 +23,10 @@ export const metadata: Metadata = {
   title: 'ScriptFlow - YouTube Video Transcription',
   description:
     'Convert any YouTube video into an interactive, searchable transcript with AI-powered summaries and chapter navigation.',
-  
+
   themeColor: '#3b82f6',
   viewport:
     'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
-  
 }
 
 export default function RootLayout({
@@ -41,7 +40,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-bg text-fg antialiased`}
       >
         <ThemeProvider defaultTheme="dark">
-          
           <ParticleBackground />
           <div className="relative flex min-h-screen flex-col">
             <Navbar />

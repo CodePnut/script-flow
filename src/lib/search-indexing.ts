@@ -172,6 +172,7 @@ class SearchIndexingService {
 
           // Tokenize content
           const tokens = this.tokenizeContent(content)
+          const tokensString = tokens.join(' ')
 
           // Create or update search index
           await prisma.searchIndex.upsert({
@@ -179,12 +180,12 @@ class SearchIndexingService {
             create: {
               transcriptId,
               content,
-              tokens,
+              tokens: tokensString,
               language: transcript.language,
             },
             update: {
               content,
-              tokens,
+              tokens: tokensString,
               language: transcript.language,
               updatedAt: new Date(),
             },

@@ -10,7 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -38,8 +38,8 @@ model Transcript {
   id          String  @id @default(cuid())
   videoId     String  @map("video_id")
   title       String
-  description String? @db.Text
-  summary     String? @db.Text
+  description String?
+  summary     String?
   language    String  @default("en")
   duration    Float? // Video duration in seconds
 
@@ -85,14 +85,14 @@ model Transcript {
  * Supports privacy-compliant analytics and performance monitoring
  */
 model AnalyticsEvent {
-  id          String   @id @default(cuid())
-  userId      String?  @map("user_id")
-  sessionId   String   @map("session_id")
-  ipHash      String   @map("ip_hash")
-  eventType   String   @map("event_type")
-  eventData   Json     @map("event_data")
-  timestamp   DateTime @default(now())
-  
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  sessionId String   @map("session_id")
+  ipHash    String   @map("ip_hash")
+  eventType String   @map("event_type")
+  eventData Json     @map("event_data")
+  timestamp DateTime @default(now())
+
   // Indexes for efficient analytics queries
   @@index([userId, timestamp])
   @@index([sessionId, timestamp])
@@ -107,15 +107,15 @@ model AnalyticsEvent {
  * Pre-processed search data for faster query performance
  */
 model SearchIndex {
-  id          String   @id @default(cuid())
-  transcriptId String  @unique @map("transcript_id") // Make unique for one-to-one relation
-  content     String   @db.Text
-  tokens      String[] // Tokenized content for search
-  language    String
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  transcriptId String   @unique @map("transcript_id") // Make unique for one-to-one relation
+  content      String
+  tokens       String // Tokenized content for search (JSON string)
+  language     String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  transcript  Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  transcript Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
 
   // Indexes for search optimization
   @@index([language])
@@ -128,13 +128,13 @@ model SearchIndex {
  * Tracks database query performance for analytics and optimization
  */
 model QueryPerformanceLog {
-  id          String   @id @default(cuid())
-  queryType   String   @map("query_type")
-  queryHash   String   @map("query_hash") // Hash of the query for grouping
-  duration    Int      // Query duration in milliseconds
-  parameters  Json?    // Query parameters (anonymized)
-  timestamp   DateTime @default(now())
-  
+  id         String   @id @default(cuid())
+  queryType  String   @map("query_type")
+  queryHash  String   @map("query_hash") // Hash of the query for grouping
+  duration   Int // Query duration in milliseconds
+  parameters Json? // Query parameters (anonymized)
+  timestamp  DateTime @default(now())
+
   // Indexes for performance analysis
   @@index([queryType, timestamp])
   @@index([queryHash, timestamp])

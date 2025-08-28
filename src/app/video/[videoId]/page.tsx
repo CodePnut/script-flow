@@ -485,7 +485,6 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                     }}
                     keyPoints={videoData.metadata.keyPoints}
                     confidence={videoData.metadata.summaryConfidence}
-                    summaryStyle={videoData.metadata.summaryStyle}
                     onRegenerate={handleRegenerateSummary}
                   />
                 </TabsContent>

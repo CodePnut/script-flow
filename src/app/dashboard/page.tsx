@@ -137,8 +137,6 @@ export default function DashboardPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="lg:col-span-1 space-y-6"
           >
-            
-            
             <DatabaseMonitor />
           </motion.div>
         </div>
