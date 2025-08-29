@@ -65,8 +65,15 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const url = `${baseURL}${endpoint}`
+  const isBrowser = typeof window !== 'undefined'
+  // Prefer same-origin relative requests in the browser to avoid CORS/base URL issues
+  // Fall back to env-based absolute URL on the server
+  const serverBase =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+    'http://localhost:3000'
+  const url = isBrowser ? endpoint : `${serverBase}${endpoint}`
 
   try {
     const response = await fetch(url, {

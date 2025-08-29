@@ -41,10 +41,10 @@ interface TranscriptMetadata {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ videoId: string }> },
+  { params }: { params: { videoId: string } },
 ) {
   try {
-    const { videoId } = await params
+    const { videoId } = params
 
     // Validate video ID format
     if (!videoId || typeof videoId !== 'string') {
@@ -124,8 +124,12 @@ function convertUtterancesToSegments(utterances: unknown): TranscriptSegment[] {
       start: (u.start as number) || 0,
       end: (u.end as number) || 0,
       text: (u.text as string) || '',
-      speaker: u.speaker ? `Speaker ${u.speaker}` : 'Speaker',
-      confidence: (u.confidence as number) || 0.95,
+      speaker:
+        u.speaker !== undefined && u.speaker !== null
+          ? `Speaker ${u.speaker}`
+          : undefined,
+      confidence:
+        typeof u.confidence === 'number' ? (u.confidence as number) : 0.95,
     }
   })
 }

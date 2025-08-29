@@ -31,10 +31,10 @@ import type {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   try {
-    const { id } = await params
+    const { id } = params
 
     // Validate transcript ID format
     if (!id || typeof id !== 'string') {
@@ -136,8 +136,12 @@ function convertUtterancesToSegments(utterances: unknown): TranscriptSegment[] {
       start: (u.start as number) || 0,
       end: (u.end as number) || 0,
       text: (u.text as string) || '',
-      speaker: u.speaker ? `Speaker ${u.speaker}` : 'Speaker',
-      confidence: (u.confidence as number) || 0.95,
+      speaker:
+        u.speaker !== undefined && u.speaker !== null
+          ? `Speaker ${u.speaker}`
+          : undefined,
+      confidence:
+        typeof u.confidence === 'number' ? (u.confidence as number) : 0.95,
     }
   })
 }

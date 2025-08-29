@@ -30,10 +30,10 @@ const regenerateSummarySchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   try {
-    const { id: transcriptId } = await params
+    const { id: transcriptId } = params
 
     // Parse and validate request body
     let requestBody = {}
@@ -104,6 +104,24 @@ export async function POST(
         },
       },
     })
+
+    // Invalidate any cached video metadata and refresh transcript cache
+    try {
+      // Find transcript to get videoId
+      const t = await prisma.transcript.findUnique({
+        where: { id: transcriptId },
+        select: { videoId: true },
+      })
+      if (t?.videoId) {
+        const { cache } = await import('@/lib/cache')
+        await cache.invalidateTranscript(t.videoId)
+        // Refresh transcript cache
+        const latest = await prisma.transcript.findUnique({ where: { id: transcriptId } })
+        if (latest) await cache.setTranscript(t.videoId, latest as any)
+      }
+    } catch (e) {
+      console.warn('🟡 Cache refresh after summary regeneration failed:', e)
+    }
 
     console.log(
       `✅ ${style} summary regenerated successfully for transcript:`,

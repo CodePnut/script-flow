@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VideoPlayer, type VideoPlayerRef } from '@/components/VideoPlayer'
-import { getVideo, handleAPIError } from '@/lib/api'
+import { getVideo, handleAPIError, startTranscription } from '@/lib/api'
 import type { VideoData } from '@/lib/transcript'
 import { normalizeVideoId } from '@/lib/transcript'
 import { formatDate } from '@/lib/utils'
@@ -58,9 +58,20 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [transcribeProgress, setTranscribeProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [showControls, setShowControls] = useState(true)
+
+  const getStatusCode = (err: unknown): number | undefined => {
+    if (typeof err === 'object' && err !== null) {
+      const maybe = err as { status?: unknown; statusCode?: unknown }
+      if (typeof maybe.status === 'number') return maybe.status
+      if (typeof maybe.statusCode === 'number') return maybe.statusCode
+    }
+    return undefined
+  }
 
   /**
    * Load video data on mount
@@ -80,7 +91,57 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
 
         setVideoData(data)
       } catch (err) {
-        setError(handleAPIError(err))
+        // If missing, kick off transcription then poll until ready
+        const status = getStatusCode(err)
+        if (status === 404) {
+          try {
+            setIsTranscribing(true)
+            setTranscribeProgress(0)
+            await startTranscription(
+              `https://www.youtube.com/watch?v=${videoId}`,
+              {
+                onProgress: (p: number) => setTranscribeProgress(p),
+              },
+            )
+
+            // Poll for availability with exponential backoff
+            let attempt = 0
+            const maxAttempts = 15
+            const baseDelay = 1000
+            let found = false
+            while (attempt < maxAttempts) {
+              try {
+                const ready = await getVideo(videoId)
+                if (ready) {
+                  setVideoData(ready)
+                  setError(null)
+                  found = true
+                  break
+                }
+              } catch (e) {
+                const s = getStatusCode(e)
+                if (s && s !== 404) {
+                  throw e
+                }
+              }
+              attempt += 1
+              const delay = baseDelay * Math.min(6, attempt) // capped backoff
+              await new Promise((r) => setTimeout(r, delay))
+            }
+
+            if (!found) {
+              setError(
+                'Transcription is taking longer than expected. Please refresh in a moment.',
+              )
+            }
+          } catch (e) {
+            setError(handleAPIError(e))
+          } finally {
+            setIsTranscribing(false)
+          }
+        } else {
+          setError(handleAPIError(err))
+        }
       } finally {
         setLoading(false)
       }
@@ -246,6 +307,11 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-muted-fg">Loading video...</p>
+              {isTranscribing && (
+                <p className="text-sm text-muted-fg mt-2">
+                  Transcribing... {transcribeProgress}%
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -262,9 +328,14 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
             <Card className="max-w-md w-full">
               <CardContent className="p-6 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Video Not Found</h2>
+                <h2 className="text-xl font-semibold mb-2">
+                  {isTranscribing ? 'Transcribing Video' : 'Video Not Ready'}
+                </h2>
                 <p className="text-muted-fg mb-4">
-                  {error || "The video you're looking for doesn't exist."}
+                  {isTranscribing
+                    ? `We started transcribing this video. Progress: ${transcribeProgress}%`
+                    : error ||
+                      "The video isn't available yet. Try again shortly."}
                 </p>
                 <Button asChild>
                   <Link href="/">Return Home</Link>

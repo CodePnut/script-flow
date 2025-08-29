@@ -182,9 +182,38 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ Mock transcription completed for video:', videoId)
 
-      // Cache the mock transcript for future requests
+      // Enrich mock with AI summary to provide realistic details
+      try {
+        const ai = await aiSummaryService.generateSummary(transcriptRecord.id)
+        await prisma.transcript.update({
+          where: { id: transcriptRecord.id },
+          data: {
+            summary: ai.summary,
+            metadata: {
+              source: 'mock',
+              model: 'mock-nova-2',
+              confidence: 0.95,
+              diarization: true,
+              generatedAt: new Date().toISOString(),
+              topics: ai.topics,
+              keyPoints: ai.keyPoints,
+              summaryConfidence: ai.confidence,
+              summaryStyle: ai.style,
+              aiSummaryGeneratedAt: new Date().toISOString(),
+            },
+          },
+        })
+      } catch (e) {
+        console.warn('⚠️ AI summary on mock failed:', e)
+      }
+
+      // Cache the mock transcript for future requests and invalidate video metadata
       console.log(`💾 Caching mock transcript: ${videoId}`)
-      await cache.setTranscript(videoId, transcriptRecord)
+      await cache.invalidateTranscript(videoId)
+      const refreshed = await prisma.transcript.findUnique({
+        where: { id: transcriptRecord.id },
+      })
+      if (refreshed) await cache.setTranscript(videoId, refreshed)
 
       // Index the mock transcript for search (async, don't wait)
       setImmediate(() => {
@@ -651,6 +680,15 @@ export async function POST(request: NextRequest) {
       },
     })
     console.log('✅ Transcript updated with AI summary:', updatedTranscript.id)
+
+    // Invalidate any stale cached video metadata and refresh transcript cache
+    try {
+      await cache.invalidateTranscript(videoId)
+      await cache.setTranscript(videoId, updatedTranscript)
+      console.log(`♻️ Cache invalidated and transcript refreshed for: ${videoId}`)
+    } catch (e) {
+      console.warn('🟡 Cache refresh after summary update failed:', e)
+    }
 
     // Return successful response
     return NextResponse.json({
