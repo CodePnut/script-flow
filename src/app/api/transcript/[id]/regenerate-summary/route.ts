@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import type { Transcript as TranscriptModel } from '@/generated/prisma'
 import { aiSummaryService } from '@/lib/ai-summary'
 import { prisma } from '@/lib/prisma'
 
@@ -117,7 +118,7 @@ export async function POST(
         await cache.invalidateTranscript(t.videoId)
         // Refresh transcript cache
         const latest = await prisma.transcript.findUnique({ where: { id: transcriptId } })
-        if (latest) await cache.setTranscript(t.videoId, latest as any)
+        if (latest) await cache.setTranscript(t.videoId, latest as TranscriptModel)
       }
     } catch (e) {
       console.warn('🟡 Cache refresh after summary regeneration failed:', e)
