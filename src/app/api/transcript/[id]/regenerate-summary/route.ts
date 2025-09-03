@@ -4,7 +4,7 @@
  * Regenerate summary and key points for an existing transcript using AI-powered analysis
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import type { Transcript as TranscriptModel } from '@/generated/prisma'
@@ -29,12 +29,17 @@ const regenerateSummarySchema = z.object({
  *
  * Regenerate summary using AI-powered analysis of the entire transcript
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: Request, context: unknown) {
   try {
-    const { id: transcriptId } = params
+    const params = (context as { params?: { id?: string } })?.params
+    const transcriptId = params?.id
+
+    if (!transcriptId || typeof transcriptId !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid transcript ID' },
+        { status: 400 },
+      )
+    }
 
     // Parse and validate request body
     let requestBody = {}

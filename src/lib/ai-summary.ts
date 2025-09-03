@@ -5,6 +5,7 @@
  * meaningful summaries that capture the actual content and key insights.
  */
 
+import { summarizeTranscriptLLM, type TranscriptChunk } from './llm'
 import { prisma } from './prisma'
 
 /**
@@ -116,21 +117,37 @@ export class AISummaryService {
       // Process the entire transcript intelligently
       const processedContent = this.processTranscriptContent(utterances)
       const topics = this.extractTopics(processedContent)
-      const summary = this.generateSummaryByStyle(
-        processedContent,
-        topics,
-        params,
-      )
+
+      // Try using LLM for smarter summarization if configured
+      let llmResult: SummaryResult | null = null
+      try {
+        llmResult = await this.tryLLMSummary(
+          processedContent,
+          params,
+          transcript.title || undefined,
+        )
+      } catch {
+        // Log but do not fail the request; we'll fall back to heuristics
+        console.warn('🟡 LLM summarization unavailable, using heuristic')
+      }
+
+      // Use LLM if available, otherwise heuristic
+      const summary =
+        llmResult?.summary ||
+        this.generateSummaryByStyle(processedContent, topics, params)
       const keyPoints =
-        params.includeKeyPoints !== false
+        llmResult?.keyPoints ||
+        (params.includeKeyPoints !== false
           ? this.extractKeyPoints(processedContent)
-          : []
+          : [])
 
       const result: SummaryResult = {
         summary,
         keyPoints,
         topics: topics.map((t) => t.topic),
-        confidence: this.calculateConfidence(processedContent, topics),
+        confidence:
+          llmResult?.confidence ??
+          this.calculateConfidence(processedContent, topics),
         style: params.style,
         wordCount: summary.split(' ').length,
         generatedAt: new Date(),
@@ -145,6 +162,51 @@ export class AISummaryService {
       throw new Error(
         `Failed to generate AI summary: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
+    }
+  }
+
+  /**
+   * Attempt LLM-powered summary. Returns null if not configured/failed.
+   */
+  private async tryLLMSummary(
+    content: ProcessedContent,
+    params: SummaryParams,
+    title?: string,
+  ): Promise<SummaryResult | null> {
+    // Build chunks from time segments; if none, fall back to full text chunk
+    const chunks: TranscriptChunk[] =
+      content.timeSegments?.length > 0
+        ? content.timeSegments.map((seg) => ({
+            start: seg.start,
+            end: seg.end,
+            text: seg.text.trim(),
+          }))
+        : [{ start: 0, end: Math.max(1, content.totalDuration), text: content.fullText }]
+
+    try {
+      const llm = await summarizeTranscriptLLM(chunks, {
+        style: params.style,
+        maxLength: params.maxLength,
+        focusOnTopics: params.focusOnTopics,
+        videoTitle: title,
+      })
+
+      const summaryText = this.cleanupSummary(llm.summary)
+      const keyPoints = (llm.keyPoints || []).map((p) => this.cleanupSentence(p))
+      const topics = Array.isArray(llm.topics) ? llm.topics : []
+      const wordCount = summaryText.split(' ').length
+
+      return {
+        summary: summaryText,
+        keyPoints: keyPoints.slice(0, 5),
+        topics,
+        confidence: 0.9, // LLM-backed summaries get higher base confidence
+        style: params.style,
+        wordCount,
+        generatedAt: new Date(),
+      }
+    } catch {
+      return null
     }
   }
 
