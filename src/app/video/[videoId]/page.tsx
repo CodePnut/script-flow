@@ -276,6 +276,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
       const {
         summary,
         keyPoints,
+        keyPointsRich,
         confidence,
         style: newStyle,
       } = await response.json()
@@ -286,6 +287,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
         metadata: {
           ...videoData.metadata,
           keyPoints: keyPoints,
+          keyPointsRich: keyPointsRich,
           summaryConfidence: confidence,
           summaryStyle: newStyle,
         },
@@ -555,8 +557,10 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                       language: videoData.metadata.language,
                     }}
                     keyPoints={videoData.metadata.keyPoints}
+                    keyPointsRich={videoData.metadata.keyPointsRich}
                     confidence={videoData.metadata.summaryConfidence}
                     onRegenerate={handleRegenerateSummary}
+                    onJumpTo={handleTimestampClick}
                   />
                 </TabsContent>
 

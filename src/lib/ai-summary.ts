@@ -34,6 +34,22 @@ export interface SummaryResult {
   style: SummaryStyle
   wordCount: number
   generatedAt: Date
+  // Optional enriched key points with categories and timestamps
+  keyPointsRich?: Array<{
+    text: string
+    category?:
+      | 'Concept'
+      | 'Example'
+      | 'Action'
+      | 'Result'
+      | 'Tip'
+      | 'Metric'
+      | 'Best Practice'
+      | 'Warning'
+      | 'Process'
+    start?: number
+    end?: number
+  }>
 }
 
 /**
@@ -141,6 +157,8 @@ export class AISummaryService {
           ? this.extractKeyPoints(processedContent)
           : [])
 
+      const keyPointsRich = this.buildKeyPointsRich(keyPoints, processedContent)
+
       const result: SummaryResult = {
         summary,
         keyPoints,
@@ -151,6 +169,7 @@ export class AISummaryService {
         style: params.style,
         wordCount: summary.split(' ').length,
         generatedAt: new Date(),
+        keyPointsRich,
       }
 
       console.log(
@@ -204,10 +223,79 @@ export class AISummaryService {
         style: params.style,
         wordCount,
         generatedAt: new Date(),
+        keyPointsRich: this.buildKeyPointsRich(keyPoints.slice(0, 5), content),
       }
     } catch {
       return null
     }
+  }
+
+  /**
+   * Build enriched key points with categories and approximate timestamps
+   */
+  private buildKeyPointsRich(
+    points: string[],
+    content: ProcessedContent,
+  ): Array<{
+    text: string
+    category?:
+      | 'Concept'
+      | 'Example'
+      | 'Action'
+      | 'Result'
+      | 'Tip'
+      | 'Metric'
+      | 'Best Practice'
+      | 'Warning'
+      | 'Process'
+    start?: number
+    end?: number
+  }> {
+    const categorize = (text: string) => {
+      const t = text.toLowerCase()
+      if (/(for example|example|e\.g\.|case|demo|demonstrat)/.test(t)) return 'Example'
+      if (/(should|recommend|best practice|avoid|ensure|always|never)/.test(t)) return 'Best Practice'
+      if (/(warning|caution|risk|pitfall|anti-pattern|beware)/.test(t)) return 'Warning'
+      if (/(result|outcome|therefore|thus|leads to|implies)/.test(t)) return 'Result'
+      if (/(define|definition|concept|principle|theory|what is)/.test(t)) return 'Concept'
+      if (/(step|first|next|then|process|workflow)/.test(t)) return 'Process'
+      if (/(click|use|do|set|create|run|call|enable|disable|configure)/.test(t)) return 'Action'
+      if (/(\d+%|\d+ms|\d+s|\d+min|performance|throughput|latency|metric)/.test(t)) return 'Metric'
+      if (/(tip|hint|pro tip)/.test(t)) return 'Tip'
+      return undefined
+    }
+
+    const scoreMatch = (a: string, b: string) => {
+      const wa = a.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean)
+      const wb = b.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean)
+      if (wa.length === 0 || wb.length === 0) return 0
+      const setB = new Set(wb)
+      let hits = 0
+      for (const w of wa) if (setB.has(w)) hits++
+      return hits / Math.sqrt(wa.length * wb.length)
+    }
+
+    const segments = content.timeSegments || []
+
+    return points.map((text) => {
+      let bestIdx = -1
+      let bestScore = 0
+      for (let i = 0; i < segments.length; i++) {
+        const s = segments[i]
+        const score = scoreMatch(text, s.text)
+        if (score > bestScore) {
+          bestScore = score
+          bestIdx = i
+        }
+      }
+      const seg = bestIdx >= 0 ? segments[bestIdx] : undefined
+      return {
+        text: this.cleanupSentence(text),
+        category: categorize(text),
+        start: seg?.start,
+        end: seg?.end,
+      }
+    })
   }
 
   /**

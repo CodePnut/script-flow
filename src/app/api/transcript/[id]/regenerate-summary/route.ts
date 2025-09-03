@@ -81,7 +81,22 @@ export async function POST(request: Request, context: unknown) {
       transcriptId,
     )
 
-    // Generate new summary using AI service
+    // Handle provider selection
+    const provider = (process.env.SUMMARY_PROVIDER || 'local').toLowerCase()
+
+    if (provider === 'deepgram') {
+      // For Deepgram, regeneration would require re-transcription to refresh
+      // the server-side summary. Advise client to re-run transcription.
+      return NextResponse.json(
+        {
+          error: 'Regeneration not supported for Deepgram provider',
+          hint: 'Re-run transcription to refresh Deepgram summary',
+        },
+        { status: 400 },
+      )
+    }
+
+    // Generate new summary using AI service (local/openai/openrouter)
     const summaryResult = await aiSummaryService.generateSummary(transcriptId, {
       style,
       maxLength,
@@ -99,6 +114,7 @@ export async function POST(request: Request, context: unknown) {
           summaryConfidence: summaryResult.confidence,
           summaryWordCount: summaryResult.wordCount,
           keyPoints: summaryResult.keyPoints,
+          keyPointsRich: summaryResult.keyPointsRich,
 
           lastSummaryRegeneration: summaryResult.generatedAt.toISOString(),
           summaryGenerationParams: {
@@ -137,6 +153,7 @@ export async function POST(request: Request, context: unknown) {
     return NextResponse.json({
       summary: summaryResult.summary,
       keyPoints: summaryResult.keyPoints,
+      keyPointsRich: summaryResult.keyPointsRich,
 
       confidence: summaryResult.confidence,
       style: summaryResult.style,

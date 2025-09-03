@@ -48,9 +48,29 @@ export interface VideoData {
     // AI summary metadata
     topics?: string[]
     keyPoints?: string[]
+    keyPointsRich?: KeyPointRich[]
     summaryConfidence?: number
     summaryStyle?: 'brief' | 'detailed' | 'executive' | 'educational'
   }
+}
+
+/**
+ * Structured key point with optional categorization and timing
+ */
+export interface KeyPointRich {
+  text: string
+  category?:
+    | 'Concept'
+    | 'Example'
+    | 'Action'
+    | 'Result'
+    | 'Tip'
+    | 'Metric'
+    | 'Best Practice'
+    | 'Warning'
+    | 'Process'
+  start?: number
+  end?: number
 }
 
 /**

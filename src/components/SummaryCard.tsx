@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
+import { formatTimestamp, type KeyPointRich } from '@/lib/transcript'
 import { cn, formatDate } from '@/lib/utils'
 
 import { Button } from './ui/button'
@@ -47,6 +48,8 @@ interface SummaryCardProps {
 
   /** AI-generated key points */
   keyPoints?: string[]
+  /** Rich key points with categories and timestamps */
+  keyPointsRich?: KeyPointRich[]
   /** Summary confidence score (0-1) */
   confidence?: number
   /** Current summary style */
@@ -63,6 +66,8 @@ interface SummaryCardProps {
   onShare?: () => void
   /** Callback for regenerate functionality */
   onRegenerate?: (style?: SummaryStyle) => void
+  /** Callback to jump video to timestamp (in seconds) */
+  onJumpTo?: (time: number) => void
 }
 
 /**
@@ -83,6 +88,7 @@ export function SummaryCard({
   summary,
   metadata,
   keyPoints = [],
+  keyPointsRich,
   confidence,
   summaryStyle = 'detailed',
   className,
@@ -91,6 +97,7 @@ export function SummaryCard({
   onExport,
   onShare,
   onRegenerate,
+  onJumpTo,
 }: SummaryCardProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -330,13 +337,16 @@ export function SummaryCard({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              {keyPoints.length > 0 ? (
+              {(keyPointsRich && keyPointsRich.length > 0) || keyPoints.length > 0 ? (
                 <div className="space-y-3">
                   <div className="text-sm text-muted-foreground mb-3 text-center">
                     <strong>5 Key Insights</strong> extracted from the video
                     content
                   </div>
-                  {keyPoints.map((point, index) => (
+                  {(keyPointsRich && keyPointsRich.length > 0
+                    ? keyPointsRich
+                    : keyPoints.map((t) => ({ text: t } as KeyPointRich))
+                  ).map((point, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
@@ -349,9 +359,29 @@ export function SummaryCard({
                           {index + 1}
                         </span>
                       </div>
-                      <span className="text-foreground text-sm leading-relaxed group-hover:text-primary/90 transition-colors">
-                        {point}
-                      </span>
+                      <div className="flex-1">
+                        <p className="text-foreground text-sm leading-relaxed group-hover:text-primary/90 transition-colors">
+                          {point.text}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {point.category && (
+                            <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                              {point.category}
+                            </span>
+                          )}
+                          {typeof point.start === 'number' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                              onClick={() => onJumpTo && onJumpTo(point.start!)}
+                            >
+                              <Clock className="h-3 w-3 mr-1" />
+                              {formatTimestamp(Math.round(point.start!))}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>

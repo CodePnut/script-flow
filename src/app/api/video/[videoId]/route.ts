@@ -23,6 +23,7 @@ import type {
   VideoData,
   TranscriptSegment,
   VideoChapter,
+  KeyPointRich,
 } from '@/lib/transcript'
 
 /**
@@ -30,6 +31,12 @@ import type {
  */
 interface TranscriptMetadata {
   keyPoints?: string[]
+  keyPointsRich?: Array<{
+    text: string
+    category?: string
+    start?: number
+    end?: number
+  }>
   summaryConfidence?: number
   [key: string]: unknown
 }
@@ -71,6 +78,36 @@ export async function GET(request: NextRequest, context: unknown) {
       )
     }
 
+    // Helper to sanitize rich key points from metadata JSON
+    const sanitizeKeyPointsRich = (value: unknown): KeyPointRich[] => {
+      if (!Array.isArray(value)) return []
+      const allowed = new Set([
+        'Concept',
+        'Example',
+        'Action',
+        'Result',
+        'Tip',
+        'Metric',
+        'Best Practice',
+        'Warning',
+        'Process',
+      ])
+      return (value as unknown[])
+        .map((v) => {
+          const o = v as Record<string, unknown>
+          const cat = typeof o.category === 'string' && allowed.has(o.category)
+            ? (o.category as KeyPointRich['category'])
+            : undefined
+          return {
+            text: String(o.text || ''),
+            category: cat,
+            start: typeof o.start === 'number' ? o.start : undefined,
+            end: typeof o.end === 'number' ? o.end : undefined,
+          } as KeyPointRich
+        })
+        .filter((k) => !!k.text)
+    }
+
     // Convert database format to frontend VideoData format
     const videoData: VideoData = {
       id: transcript.id,
@@ -87,6 +124,9 @@ export async function GET(request: NextRequest, context: unknown) {
         generatedAt: transcript.createdAt || new Date(),
         source: 'deepgram',
         keyPoints: (transcript.metadata as TranscriptMetadata)?.keyPoints || [],
+        keyPointsRich: sanitizeKeyPointsRich(
+          (transcript.metadata as TranscriptMetadata)?.keyPointsRich,
+        ),
         summaryConfidence:
           (transcript.metadata as TranscriptMetadata)?.summaryConfidence || 0.8,
       },

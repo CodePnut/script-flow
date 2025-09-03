@@ -197,6 +197,7 @@ export async function POST(request: NextRequest) {
               generatedAt: new Date().toISOString(),
               topics: ai.topics,
               keyPoints: ai.keyPoints,
+              keyPointsRich: ai.keyPointsRich,
               summaryConfidence: ai.confidence,
               summaryStyle: ai.style,
               aiSummaryGeneratedAt: new Date().toISOString(),
@@ -659,27 +660,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update transcript with AI summary
+    // Choose summary provider
+    const provider = (process.env.SUMMARY_PROVIDER || 'local').toLowerCase()
+    let finalSummary = transcriptRecord.summary || aiSummary.summary
+    let metaExtras: Record<string, unknown> = {}
+
+    if (provider === 'deepgram') {
+      // Keep Deepgram summary, enrich only key points via heuristic/LLM
+      finalSummary = transcriptRecord.summary || aiSummary.summary
+      metaExtras = {
+        topics: aiSummary.topics,
+        keyPoints: aiSummary.keyPoints,
+        keyPointsRich: aiSummary.keyPointsRich,
+        summaryConfidence: aiSummary.confidence,
+        summaryStyle: aiSummary.style,
+      }
+    } else {
+      // Use AI summary result
+      finalSummary = aiSummary.summary
+      metaExtras = {
+        topics: aiSummary.topics,
+        keyPoints: aiSummary.keyPoints,
+        keyPointsRich: aiSummary.keyPointsRich,
+        summaryConfidence: aiSummary.confidence,
+        summaryStyle: aiSummary.style,
+      }
+    }
+
     const updatedTranscript = await prisma.transcript.update({
       where: { id: transcriptRecord.id },
       data: {
-        summary: aiSummary.summary,
+        summary: finalSummary,
         metadata: {
           source: 'deepgram',
           model: DEEPGRAM_OPTIONS.model,
           confidence: transcript.confidence,
           diarization: DEEPGRAM_OPTIONS.diarize,
           generatedAt: new Date().toISOString(),
-          // AI summary metadata
-          topics: aiSummary.topics,
-          keyPoints: aiSummary.keyPoints,
-          summaryConfidence: aiSummary.confidence,
-          summaryStyle: aiSummary.style,
           aiSummaryGeneratedAt: new Date().toISOString(),
+          ...metaExtras,
         },
       },
     })
-    console.log('✅ Transcript updated with AI summary:', updatedTranscript.id)
+    console.log('✅ Transcript updated with summary provider:', provider)
 
     // Invalidate any stale cached video metadata and refresh transcript cache
     try {

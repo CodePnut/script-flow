@@ -22,6 +22,7 @@ import type {
   VideoData,
   TranscriptSegment,
   VideoChapter,
+  KeyPointRich,
 } from '@/lib/transcript'
 
 /**
@@ -82,6 +83,35 @@ export async function GET(request: NextRequest, context: unknown) {
     }
 
     // Convert database format to frontend VideoData format
+    const sanitizeKeyPointsRich = (value: unknown): KeyPointRich[] => {
+      if (!Array.isArray(value)) return []
+      const allowed = new Set([
+        'Concept',
+        'Example',
+        'Action',
+        'Result',
+        'Tip',
+        'Metric',
+        'Best Practice',
+        'Warning',
+        'Process',
+      ])
+      return (value as unknown[])
+        .map((v) => {
+          const o = v as Record<string, unknown>
+          const cat = typeof o.category === 'string' && allowed.has(o.category)
+            ? (o.category as KeyPointRich['category'])
+            : undefined
+          return {
+            text: String(o.text || ''),
+            category: cat,
+            start: typeof o.start === 'number' ? o.start : undefined,
+            end: typeof o.end === 'number' ? o.end : undefined,
+          } as KeyPointRich
+        })
+        .filter((k) => !!k.text)
+    }
+
     const videoData: VideoData = {
       videoId: transcript.videoId,
       title: transcript.title,
@@ -100,6 +130,9 @@ export async function GET(request: NextRequest, context: unknown) {
         // AI summary metadata
         topics: (transcript.metadata as { topics?: string[] })?.topics,
         keyPoints: (transcript.metadata as { keyPoints?: string[] })?.keyPoints,
+        keyPointsRich: sanitizeKeyPointsRich(
+          (transcript.metadata as { keyPointsRich?: unknown })?.keyPointsRich,
+        ),
         summaryConfidence: (
           transcript.metadata as { summaryConfidence?: number }
         )?.summaryConfidence,
