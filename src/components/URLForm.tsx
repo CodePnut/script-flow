@@ -18,8 +18,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { queue } from '@/lib/offline-queue'
-import { serviceWorker } from '@/lib/service-worker'
 
 // YouTube URL validation schema
 const formSchema = z.object({
@@ -55,24 +53,6 @@ export function URLForm({ onSubmit, className }: URLFormProps) {
     setIsLoading(true)
 
     try {
-      // Check if we're online
-      const isOnline = serviceWorker.isOnline()
-
-      if (!isOnline) {
-        // Queue for offline processing
-        await queue.queueTranscription(values.url)
-
-        toast.success('📝 Transcription queued', {
-          description:
-            "Your request has been queued and will be processed when you're back online.",
-          duration: 5000,
-        })
-
-        // Reset form
-        form.reset()
-        return
-      }
-
       // Add slight delay for user experience
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
