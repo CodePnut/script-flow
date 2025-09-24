@@ -21,8 +21,8 @@
 
 import { createClient } from '@deepgram/sdk'
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import YTDlpWrap from 'yt-dlp-wrap'
+import { z } from 'zod'
 
 import { aiSummaryService } from '@/lib/ai-summary'
 import { cache } from '@/lib/cache'
@@ -140,14 +140,14 @@ export async function POST(request: NextRequest) {
     try {
       console.log('🔍 Fetching video info for:', videoId)
       const info = await ytDlp.getVideoInfo(youtubeUrl)
-      
+
       videoInfo = {
         title: info.title || 'Unknown Title',
         description: info.description || null,
         duration: Math.floor(info.duration || 0),
         uploader: info.uploader || 'Unknown',
       }
-      
+
       console.log('✅ Video found:', videoInfo.title)
     } catch (error) {
       console.error('🔴 Error fetching video info:', error)
@@ -224,11 +224,13 @@ export async function POST(request: NextRequest) {
       // Use yt-dlp to create a readable stream of the audio
       audioStream = ytDlp.execStream([
         youtubeUrl,
-        '--format', 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
-        '--output', '-',
-        '--no-warnings'
+        '--format',
+        'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
+        '--output',
+        '-',
+        '--no-warnings',
       ])
-      
+
       console.log('✅ Audio stream created')
     } catch (error) {
       console.error('🔴 Error creating audio stream:', error)
@@ -245,8 +247,9 @@ export async function POST(request: NextRequest) {
     let result, deepgramError
     try {
       // Stream the audio directly to Deepgram
+      // Cast the stream to the expected type for Deepgram
       const response = await deepgram.listen.prerecorded.transcribeFile(
-        audioStream,
+        audioStream as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         DEEPGRAM_OPTIONS,
       )
       result = response.result

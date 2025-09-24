@@ -145,7 +145,7 @@ describe('Cache Service', () => {
       metadata: {
         language: 'en',
         generatedAt: new Date(),
-        source: 'mock',
+        source: 'deepgram',
       },
     }
 
