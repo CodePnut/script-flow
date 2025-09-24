@@ -138,8 +138,11 @@ export async function POST(request: Request, context: unknown) {
         const { cache } = await import('@/lib/cache')
         await cache.invalidateTranscript(t.videoId)
         // Refresh transcript cache
-        const latest = await prisma.transcript.findUnique({ where: { id: transcriptId } })
-        if (latest) await cache.setTranscript(t.videoId, latest as TranscriptModel)
+        const latest = await prisma.transcript.findUnique({
+          where: { id: transcriptId },
+        })
+        if (latest)
+          await cache.setTranscript(t.videoId, latest as TranscriptModel)
       }
     } catch (e) {
       console.warn('🟡 Cache refresh after summary regeneration failed:', e)

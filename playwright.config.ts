@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './tests/e2e',
-  
+
   /* Global test settings */
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -35,19 +35,19 @@ export default defineConfig({
   use: {
     /* Base URL for all tests */
     baseURL: 'http://localhost:3003',
-    
+
     /* Enhanced tracing and screenshots */
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    
+
     /* Browser settings */
     actionTimeout: 10000,
     navigationTimeout: 30000,
-    
+
     /* Ignore HTTPS errors for development */
     ignoreHTTPSErrors: true,
-    
+
     /* Color scheme preference */
     colorScheme: 'dark',
   },
@@ -57,21 +57,21 @@ export default defineConfig({
     /* Desktop browsers */
     {
       name: 'chromium-desktop',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
       },
     },
     {
       name: 'firefox-desktop',
-      use: { 
+      use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1280, height: 720 },
       },
     },
     {
       name: 'webkit-desktop',
-      use: { 
+      use: {
         ...devices['Desktop Safari'],
         viewport: { width: 1280, height: 720 },
       },
@@ -80,13 +80,13 @@ export default defineConfig({
     /* Mobile devices */
     {
       name: 'mobile-chrome',
-      use: { 
+      use: {
         ...devices['Pixel 5'],
       },
     },
     {
       name: 'mobile-safari',
-      use: { 
+      use: {
         ...devices['iPhone 12'],
       },
     },
@@ -94,7 +94,7 @@ export default defineConfig({
     /* Tablet */
     {
       name: 'tablet',
-      use: { 
+      use: {
         ...devices['iPad Pro'],
       },
     },

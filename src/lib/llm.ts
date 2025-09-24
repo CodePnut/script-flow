@@ -44,7 +44,8 @@ function secsToClock(secs: number): string {
   const h = Math.floor(secs / 3600)
   const m = Math.floor((secs % 3600) / 60)
   const s = Math.floor(secs % 60)
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  if (h > 0)
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
@@ -66,7 +67,10 @@ function styleGuidance(style: SummaryStyle): string {
 /**
  * Summarize full transcript text with a single call if within safe size bounds.
  */
-async function summarizeWholeWithOpenAI(fullText: string, params: LLMParams): Promise<LLMSummaryResult> {
+async function summarizeWholeWithOpenAI(
+  fullText: string,
+  params: LLMParams,
+): Promise<LLMSummaryResult> {
   const { style, maxLength, focusOnTopics, videoTitle } = params
   const guidance = styleGuidance(style)
 
@@ -117,7 +121,9 @@ async function summarizeWholeWithOpenAI(fullText: string, params: LLMParams): Pr
 
   if (!response.ok) {
     const body = await response.text().catch(() => '')
-    throw new Error(`OpenAI error (${response.status}): ${body || response.statusText}`)
+    throw new Error(
+      `OpenAI error (${response.status}): ${body || response.statusText}`,
+    )
   }
 
   const json = (await response.json()) as {
@@ -131,7 +137,9 @@ async function summarizeWholeWithOpenAI(fullText: string, params: LLMParams): Pr
     throw new Error('Failed to parse LLM JSON for whole summarization')
   }
   // Basic normalization
-  parsed.keyPoints = Array.isArray(parsed.keyPoints) ? parsed.keyPoints.slice(0, 5) : []
+  parsed.keyPoints = Array.isArray(parsed.keyPoints)
+    ? parsed.keyPoints.slice(0, 5)
+    : []
   parsed.topics = Array.isArray(parsed.topics) ? parsed.topics.slice(0, 6) : []
   return parsed
 }
@@ -190,7 +198,9 @@ async function summarizeChunkedWithOpenAI(
 
     if (!response.ok) {
       const body = await response.text().catch(() => '')
-      throw new Error(`OpenAI chunk error (${response.status}): ${body || response.statusText}`)
+      throw new Error(
+        `OpenAI chunk error (${response.status}): ${body || response.statusText}`,
+      )
     }
 
     const json = (await response.json()) as {
@@ -205,7 +215,9 @@ async function summarizeChunkedWithOpenAI(
     }
     chunkSummaries.push({
       summary: parsed.summary || '',
-      keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints.slice(0, 3) : [],
+      keyPoints: Array.isArray(parsed.keyPoints)
+        ? parsed.keyPoints.slice(0, 3)
+        : [],
     })
   }
 
@@ -217,7 +229,10 @@ async function summarizeChunkedWithOpenAI(
   ].join(' ')
 
   const combined = chunkSummaries
-    .map((s, i) => `Chunk ${i + 1}:\nSummary: ${s.summary}\nKeyPoints: ${s.keyPoints.join(' | ')}`)
+    .map(
+      (s, i) =>
+        `Chunk ${i + 1}:\nSummary: ${s.summary}\nKeyPoints: ${s.keyPoints.join(' | ')}`,
+    )
     .join('\n\n')
 
   const user = [
@@ -257,7 +272,9 @@ async function summarizeChunkedWithOpenAI(
 
   if (!response.ok) {
     const body = await response.text().catch(() => '')
-    throw new Error(`OpenAI reduce error (${response.status}): ${body || response.statusText}`)
+    throw new Error(
+      `OpenAI reduce error (${response.status}): ${body || response.statusText}`,
+    )
   }
 
   const json = (await response.json()) as {
@@ -270,7 +287,9 @@ async function summarizeChunkedWithOpenAI(
   } catch {
     throw new Error('Failed to parse LLM JSON for reduced summarization')
   }
-  parsed.keyPoints = Array.isArray(parsed.keyPoints) ? parsed.keyPoints.slice(0, 5) : []
+  parsed.keyPoints = Array.isArray(parsed.keyPoints)
+    ? parsed.keyPoints.slice(0, 5)
+    : []
   parsed.topics = Array.isArray(parsed.topics) ? parsed.topics.slice(0, 6) : []
   return parsed
 }

@@ -1,6 +1,6 @@
 /**
  * Test Data and Fixtures for E2E Tests
- * 
+ *
  * Centralized test data management for consistent testing
  * across all Playwright test files.
  */
@@ -45,7 +45,8 @@ export const mockVideoData = {
       },
     ],
   },
-  summary: 'This tutorial provides a complete introduction to modern web development using React and Next.js.',
+  summary:
+    'This tutorial provides a complete introduction to modern web development using React and Next.js.',
   chapters: [
     { title: 'Introduction', start: 0, end: 300 },
     { title: 'Environment Setup', start: 300, end: 600 },
@@ -61,22 +62,22 @@ export const testSelectors = {
   transcribeLink: '[data-testid="transcribe-link"]',
   dashboardLink: '[data-testid="dashboard-link"]',
   settingsLink: '[data-testid="settings-link"]',
-  
+
   // Forms
   urlInput: 'input[placeholder*="youtube.com"]',
   submitButton: 'button[type="submit"]',
   transcribeButton: '[data-testid="transcribe-button"]',
-  
+
   // Content
   heroSection: '[data-testid="hero-section"]',
   featureCards: '[data-testid="feature-card"]',
   videoPlayer: '[data-testid="video-player"]',
   transcriptViewer: '[data-testid="transcript-viewer"]',
-  
+
   // Tabs
   summaryTab: '[data-testid="summary-tab"]',
   chaptersTab: '[data-testid="chapters-tab"]',
-  
+
   // States
   loadingSpinner: '[data-testid="loading-spinner"]',
   errorMessage: '[data-testid="error-message"]',
@@ -111,8 +112,11 @@ export const viewports = {
 /**
  * Helper function to create test data variations
  */
-export function createTestVariations<T>(baseData: T, variations: Partial<T>[]): T[] {
-  return variations.map(variation => ({ ...baseData, ...variation }))
+export function createTestVariations<T>(
+  baseData: T,
+  variations: Partial<T>[],
+): T[] {
+  return variations.map((variation) => ({ ...baseData, ...variation }))
 }
 
 /**
@@ -126,19 +130,19 @@ export const testUtils = {
     selector,
     options: { timeout },
   }),
-  
+
   /**
    * Generate random test data
    */
   generateRandomId: () => Math.random().toString(36).substring(2, 15),
-  
+
   /**
    * Common viewport sizes for responsive testing
    */
   viewports,
-  
+
   /**
    * Delay utility for testing
    */
-  delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
+  delay: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
 }

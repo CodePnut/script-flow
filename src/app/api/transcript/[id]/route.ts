@@ -99,9 +99,10 @@ export async function GET(request: NextRequest, context: unknown) {
       return (value as unknown[])
         .map((v) => {
           const o = v as Record<string, unknown>
-          const cat = typeof o.category === 'string' && allowed.has(o.category)
-            ? (o.category as KeyPointRich['category'])
-            : undefined
+          const cat =
+            typeof o.category === 'string' && allowed.has(o.category)
+              ? (o.category as KeyPointRich['category'])
+              : undefined
           return {
             text: String(o.text || ''),
             category: cat,

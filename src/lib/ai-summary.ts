@@ -200,7 +200,13 @@ export class AISummaryService {
             end: seg.end,
             text: seg.text.trim(),
           }))
-        : [{ start: 0, end: Math.max(1, content.totalDuration), text: content.fullText }]
+        : [
+            {
+              start: 0,
+              end: Math.max(1, content.totalDuration),
+              text: content.fullText,
+            },
+          ]
 
     try {
       const llm = await summarizeTranscriptLLM(chunks, {
@@ -211,7 +217,9 @@ export class AISummaryService {
       })
 
       const summaryText = this.cleanupSummary(llm.summary)
-      const keyPoints = (llm.keyPoints || []).map((p) => this.cleanupSentence(p))
+      const keyPoints = (llm.keyPoints || []).map((p) =>
+        this.cleanupSentence(p),
+      )
       const topics = Array.isArray(llm.topics) ? llm.topics : []
       const wordCount = summaryText.split(' ').length
 
@@ -253,21 +261,38 @@ export class AISummaryService {
   }> {
     const categorize = (text: string) => {
       const t = text.toLowerCase()
-      if (/(for example|example|e\.g\.|case|demo|demonstrat)/.test(t)) return 'Example'
-      if (/(should|recommend|best practice|avoid|ensure|always|never)/.test(t)) return 'Best Practice'
-      if (/(warning|caution|risk|pitfall|anti-pattern|beware)/.test(t)) return 'Warning'
-      if (/(result|outcome|therefore|thus|leads to|implies)/.test(t)) return 'Result'
-      if (/(define|definition|concept|principle|theory|what is)/.test(t)) return 'Concept'
+      if (/(for example|example|e\.g\.|case|demo|demonstrat)/.test(t))
+        return 'Example'
+      if (/(should|recommend|best practice|avoid|ensure|always|never)/.test(t))
+        return 'Best Practice'
+      if (/(warning|caution|risk|pitfall|anti-pattern|beware)/.test(t))
+        return 'Warning'
+      if (/(result|outcome|therefore|thus|leads to|implies)/.test(t))
+        return 'Result'
+      if (/(define|definition|concept|principle|theory|what is)/.test(t))
+        return 'Concept'
       if (/(step|first|next|then|process|workflow)/.test(t)) return 'Process'
-      if (/(click|use|do|set|create|run|call|enable|disable|configure)/.test(t)) return 'Action'
-      if (/(\d+%|\d+ms|\d+s|\d+min|performance|throughput|latency|metric)/.test(t)) return 'Metric'
+      if (/(click|use|do|set|create|run|call|enable|disable|configure)/.test(t))
+        return 'Action'
+      if (
+        /(\d+%|\d+ms|\d+s|\d+min|performance|throughput|latency|metric)/.test(t)
+      )
+        return 'Metric'
       if (/(tip|hint|pro tip)/.test(t)) return 'Tip'
       return undefined
     }
 
     const scoreMatch = (a: string, b: string) => {
-      const wa = a.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean)
-      const wb = b.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean)
+      const wa = a
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(Boolean)
+      const wb = b
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(Boolean)
       if (wa.length === 0 || wb.length === 0) return 0
       const setB = new Set(wb)
       let hits = 0

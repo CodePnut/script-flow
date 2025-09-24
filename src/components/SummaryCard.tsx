@@ -337,7 +337,8 @@ export function SummaryCard({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              {(keyPointsRich && keyPointsRich.length > 0) || keyPoints.length > 0 ? (
+              {(keyPointsRich && keyPointsRich.length > 0) ||
+              keyPoints.length > 0 ? (
                 <div className="space-y-3">
                   <div className="text-sm text-muted-foreground mb-3 text-center">
                     <strong>5 Key Insights</strong> extracted from the video
@@ -345,7 +346,7 @@ export function SummaryCard({
                   </div>
                   {(keyPointsRich && keyPointsRich.length > 0
                     ? keyPointsRich
-                    : keyPoints.map((t) => ({ text: t } as KeyPointRich))
+                    : keyPoints.map((t) => ({ text: t }) as KeyPointRich)
                   ).map((point, index) => (
                     <motion.div
                       key={index}

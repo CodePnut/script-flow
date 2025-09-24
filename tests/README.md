@@ -8,7 +8,7 @@ This directory contains comprehensive tests for the ScriptFlow project, organize
 tests/
 ├── unit/                    # Unit tests (Vitest)
 │   ├── components/         # Component tests
-│   ├── hooks/              # Custom hook tests  
+│   ├── hooks/              # Custom hook tests
 │   └── lib/                # Utility function tests
 ├── e2e/                    # End-to-end tests (Playwright)
 │   ├── fixtures/           # Test data and utilities
@@ -62,12 +62,14 @@ npx playwright show-report
 ## 🎯 Test Categories
 
 ### Unit Tests
+
 - **Component Tests**: Testing React components in isolation
 - **Hook Tests**: Testing custom React hooks
 - **Utility Tests**: Testing pure functions and utilities
 - **Integration Tests**: Testing component interactions
 
 ### E2E Tests
+
 - **User Flows**: Complete user journeys
 - **Cross-browser**: Chrome, Firefox, Safari compatibility
 - **Responsive**: Mobile, tablet, desktop layouts
@@ -84,10 +86,10 @@ import { URLForm } from '@/components/URLForm'
 
 test('should validate YouTube URLs', () => {
   render(<URLForm />)
-  
+
   const input = screen.getByPlaceholderText(/youtube.com/)
   const button = screen.getByRole('button', { name: /transcribe/i })
-  
+
   // Test validation logic
   expect(input).toBeInTheDocument()
   expect(button).toBeEnabled()
@@ -101,10 +103,13 @@ import { test, expect } from '@playwright/test'
 
 test('should transcribe YouTube video', async ({ page }) => {
   await page.goto('/transcribe')
-  
-  await page.fill('[data-testid="url-input"]', 'https://youtube.com/watch?v=test')
+
+  await page.fill(
+    '[data-testid="url-input"]',
+    'https://youtube.com/watch?v=test',
+  )
   await page.click('[data-testid="submit-button"]')
-  
+
   await expect(page.getByText('Processing...')).toBeVisible()
 })
 ```
@@ -114,8 +119,9 @@ test('should transcribe YouTube video', async ({ page }) => {
 ### Playwright Configuration
 
 The `playwright.config.ts` includes:
+
 - **Cross-browser testing**: Chrome, Firefox, Safari
-- **Mobile/tablet testing**: Various device viewports  
+- **Mobile/tablet testing**: Various device viewports
 - **Enhanced reporting**: HTML, JSON, JUnit formats
 - **Automatic screenshots/videos** on failure
 - **Trace collection** for debugging
@@ -123,6 +129,7 @@ The `playwright.config.ts` includes:
 ### Vitest Configuration
 
 The `vitest.config.ts` includes:
+
 - **React Testing Library** setup
 - **JSDOM environment** for browser APIs
 - **Path aliases** matching the main project
@@ -131,18 +138,21 @@ The `vitest.config.ts` includes:
 ## 🎨 Best Practices
 
 ### Test Organization
+
 - **Descriptive test names**: What the test does, not how
 - **Grouped tests**: Use `describe` blocks for logical grouping
 - **Shared fixtures**: Reuse test data and utilities
 - **Page objects**: Encapsulate page interactions
 
 ### Test Data Management
+
 - **Centralized test data**: Use `fixtures/test-data.ts`
 - **Realistic data**: Mirror production scenarios
 - **Edge cases**: Test boundary conditions
 - **Error scenarios**: Test failure paths
 
 ### Assertions
+
 - **Specific selectors**: Use `data-testid` attributes
 - **User-centric**: Test from user perspective
 - **Async handling**: Proper wait strategies
@@ -153,12 +163,14 @@ The `vitest.config.ts` includes:
 ### Common Issues
 
 **Tests timing out**
+
 ```bash
 # Increase timeout in playwright.config.ts
 timeout: 60000
 ```
 
 **Flaky tests**
+
 ```bash
 # Add proper waits
 await page.waitForLoadState('networkidle')
@@ -166,6 +178,7 @@ await expect(element).toBeVisible()
 ```
 
 **Server not starting**
+
 ```bash
 # Check if port 3003 is available
 lsof -i :3003
@@ -174,11 +187,13 @@ lsof -i :3003
 ### Debugging
 
 **View test execution**
+
 ```bash
 npx playwright test --headed --debug
 ```
 
 **Inspect test state**
+
 ```bash
 npx playwright test --trace on
 npx playwright show-trace trace.zip

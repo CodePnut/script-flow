@@ -3,6 +3,7 @@
 This document outlines the strategy and implementation steps for adding user authentication and Stripe billing to the Script Flow application.
 
 **Libraries to be Used:**
+
 - **Authentication:** **Auth.js (NextAuth.v5)** (`/nextauthjs/next-auth`)
 - **Billing:** **Stripe** (`/stripe/stripe-node` and `@stripe/react-stripe-js`)
 
@@ -31,7 +32,7 @@ model User {
   emailVerified DateTime?    // Field for Auth.js
   image         String?      // Field for Auth.js
   role          UserRole     @default(USER)
-  
+
   // Relationships for Auth.js
   accounts      Account[]
   sessions      Session[]
@@ -119,12 +120,12 @@ We will integrate Stripe to manage subscriptions and bill users based on their t
 
 ### 2.1. Pricing Model
 
--   **Free Tier:** 3 free transcriptions per month.
--   **Pro Tier:** $10/month for unlimited transcriptions.
+- **Free Tier:** 3 free transcriptions per month.
+- **Pro Tier:** $10/month for unlimited transcriptions.
 
 ### 2.2. Database Schema Changes (`prisma/schema.prisma`)
 
--   Add Stripe-related fields to the `User` model (as shown in section 1.1). These fields will track the user's subscription status.
+- Add Stripe-related fields to the `User` model (as shown in section 1.1). These fields will track the user's subscription status.
 
 ### 2.3. Implementation Steps
 
@@ -170,26 +171,26 @@ This phase connects authentication and billing to the core application logic.
 
 ### New Files
 
-| Path                                                 | Description                                      |
-| ---------------------------------------------------- | ------------------------------------------------ |
-| `MONETIZATION_PLAN.md`                               | This plan.                                       |
-| `src/lib/auth.ts`                                    | Auth.js configuration.                           |
-| `src/app/api/auth/[...nextauth]/route.ts`            | Auth.js API route handlers.                      |
-| `src/app/pricing/page.tsx`                           | Displays pricing tiers and checkout buttons.     |
-| `src/app/api/billing/checkout/route.ts`              | Creates Stripe Checkout sessions.                |
-| `src/app/api/stripe/webhooks/route.ts`               | Handles incoming webhooks from Stripe.           |
-| `src/app/api/billing/manage/route.ts`                | Creates Stripe Customer Portal sessions.         |
+| Path                                      | Description                                  |
+| ----------------------------------------- | -------------------------------------------- |
+| `MONETIZATION_PLAN.md`                    | This plan.                                   |
+| `src/lib/auth.ts`                         | Auth.js configuration.                       |
+| `src/app/api/auth/[...nextauth]/route.ts` | Auth.js API route handlers.                  |
+| `src/app/pricing/page.tsx`                | Displays pricing tiers and checkout buttons. |
+| `src/app/api/billing/checkout/route.ts`   | Creates Stripe Checkout sessions.            |
+| `src/app/api/stripe/webhooks/route.ts`    | Handles incoming webhooks from Stripe.       |
+| `src/app/api/billing/manage/route.ts`     | Creates Stripe Customer Portal sessions.     |
 
 ### Modified Files
 
-| Path                               | Description                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------ |
-| `prisma/schema.prisma`             | Add new models and fields for auth and billing.                          |
-| `.env.local`                       | Add `AUTH_SECRET`, `EMAIL_*`, and `STRIPE_*` environment variables.      |
-| `src/app/layout.tsx`               | Wrap in `SessionProvider` from NextAuth.js.                              |
-| `src/components/Navbar.tsx`        | Add Sign In/Out buttons and user profile display.                        |
-| `src/app/settings/page.tsx`        | Add "Manage Billing" button.                                             |
-| `src/app/api/transcribe/route.ts`  | Add usage tracking and feature gating logic.                             |
+| Path                              | Description                                                         |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `prisma/schema.prisma`            | Add new models and fields for auth and billing.                     |
+| `.env.local`                      | Add `AUTH_SECRET`, `EMAIL_*`, and `STRIPE_*` environment variables. |
+| `src/app/layout.tsx`              | Wrap in `SessionProvider` from NextAuth.js.                         |
+| `src/components/Navbar.tsx`       | Add Sign In/Out buttons and user profile display.                   |
+| `src/app/settings/page.tsx`       | Add "Manage Billing" button.                                        |
+| `src/app/api/transcribe/route.ts` | Add usage tracking and feature gating logic.                        |
 
 ---
 

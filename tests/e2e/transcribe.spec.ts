@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { testUrls, testMessages, testSelectors, viewports } from './fixtures/test-data'
+import {
+  testUrls,
+  testMessages,
+  testSelectors,
+  viewports,
+} from './fixtures/test-data'
 
 test.describe('Transcribe Page', () => {
   test.beforeEach(async ({ page }) => {
@@ -11,12 +16,12 @@ test.describe('Transcribe Page', () => {
     test('should display transcribe page elements', async ({ page }) => {
       // Check page title/heading
       await expect(page.locator('h1')).toContainText('Transcribe')
-      
+
       // Check URL input form
       const urlInput = page.locator(testSelectors.urlInput)
       await expect(urlInput).toBeVisible()
       await expect(urlInput).toBeEnabled()
-      
+
       // Check submit button
       const submitButton = page.locator(testSelectors.submitButton)
       await expect(submitButton).toBeVisible()
@@ -36,7 +41,7 @@ test.describe('Transcribe Page', () => {
       if (await instructionText.isVisible()) {
         await expect(instructionText).toBeVisible()
       }
-      
+
       // Check for placeholder text
       const urlInput = page.locator(testSelectors.urlInput)
       await expect(urlInput).toHaveAttribute('placeholder')
@@ -49,7 +54,7 @@ test.describe('Transcribe Page', () => {
       const testUrl = testUrls.valid.youtube
       await page.goto(`/transcribe?url=${encodeURIComponent(testUrl)}`)
       await page.waitForLoadState('networkidle')
-      
+
       // URL should be pre-filled
       const urlInput = page.locator(testSelectors.urlInput)
       await expect(urlInput).toHaveValue(testUrl)
@@ -61,20 +66,26 @@ test.describe('Transcribe Page', () => {
 
       // Test empty URL
       await submitButton.click()
-      await expect(page.getByText(testMessages.validation.emptyUrl)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.validation.emptyUrl),
+      ).toBeVisible()
 
       // Test invalid URL
       await urlInput.fill(testUrls.invalid.notYoutube)
       await submitButton.click()
-      await expect(page.getByText(testMessages.validation.invalidUrl)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.validation.invalidUrl),
+      ).toBeVisible()
 
       // Test valid URL
       await urlInput.clear()
       await urlInput.fill(testUrls.valid.youtube)
       await submitButton.click()
-      
+
       // Should not show validation error
-      await expect(page.getByText(testMessages.validation.invalidUrl)).not.toBeVisible()
+      await expect(
+        page.getByText(testMessages.validation.invalidUrl),
+      ).not.toBeVisible()
     })
 
     test('should show processing state', async ({ page }) => {
@@ -86,11 +97,13 @@ test.describe('Transcribe Page', () => {
       await submitButton.click()
 
       // Should show processing state
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
-      
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
+
       // Submit button should be disabled during processing
       await expect(submitButton).toBeDisabled()
-      
+
       // Input should be disabled during processing
       await expect(urlInput).toBeDisabled()
     })
@@ -108,8 +121,10 @@ test.describe('Transcribe Page', () => {
         await submitButton.click()
 
         // Should not show validation error
-        await expect(page.getByText(testMessages.validation.invalidUrl)).not.toBeVisible()
-        
+        await expect(
+          page.getByText(testMessages.validation.invalidUrl),
+        ).not.toBeVisible()
+
         // Should show processing or redirect
         const processingText = page.getByText(testMessages.loading.processing)
         if (await processingText.isVisible()) {
@@ -141,17 +156,21 @@ test.describe('Transcribe Page', () => {
 
       // Submit with Enter key
       await page.keyboard.press('Enter')
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
     })
 
     test('should support form submission with Enter key', async ({ page }) => {
       const urlInput = page.locator(testSelectors.urlInput)
-      
+
       await urlInput.fill(testUrls.valid.youtube)
       await urlInput.press('Enter')
-      
+
       // Should submit the form
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
     })
 
     test('should clear form after successful submission', async ({ page }) => {
@@ -163,7 +182,9 @@ test.describe('Transcribe Page', () => {
       await submitButton.click()
 
       // Wait for processing to start
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
 
       // If form clears automatically, input should be empty
       // Note: This depends on the actual implementation
@@ -174,7 +195,7 @@ test.describe('Transcribe Page', () => {
   test.describe('Error Handling', () => {
     test('should handle network errors gracefully', async ({ page }) => {
       // Simulate network failure
-      await page.route('**/api/transcribe', route => {
+      await page.route('**/api/transcribe', (route) => {
         route.abort('failed')
       })
 
@@ -185,16 +206,18 @@ test.describe('Transcribe Page', () => {
       await submitButton.click()
 
       // Should show error message
-      await expect(page.getByText(/failed|error|try again/i)).toBeVisible({ timeout: 15000 })
+      await expect(page.getByText(/failed|error|try again/i)).toBeVisible({
+        timeout: 15000,
+      })
     })
 
     test('should handle server errors', async ({ page }) => {
       // Mock server error response
-      await page.route('**/api/transcribe', route => {
+      await page.route('**/api/transcribe', (route) => {
         route.fulfill({
           status: 500,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal server error' })
+          body: JSON.stringify({ error: 'Internal server error' }),
         })
       })
 
@@ -205,7 +228,9 @@ test.describe('Transcribe Page', () => {
       await submitButton.click()
 
       // Should show error message
-      await expect(page.getByText(/error|failed/i)).toBeVisible({ timeout: 15000 })
+      await expect(page.getByText(/error|failed/i)).toBeVisible({
+        timeout: 15000,
+      })
     })
   })
 
@@ -226,7 +251,9 @@ test.describe('Transcribe Page', () => {
       await urlInput.fill(testUrls.valid.youtube)
       await submitButton.click()
 
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
     })
 
     test('should work on tablet devices', async ({ page }) => {
@@ -245,18 +272,22 @@ test.describe('Transcribe Page', () => {
       await urlInput.fill(testUrls.valid.youtube)
       await submitButton.click()
 
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
     })
   })
 
   test.describe('Accessibility', () => {
-    test('should have proper form labels and ARIA attributes', async ({ page }) => {
+    test('should have proper form labels and ARIA attributes', async ({
+      page,
+    }) => {
       const urlInput = page.locator(testSelectors.urlInput)
       const submitButton = page.locator(testSelectors.submitButton)
 
       // Input should have accessible attributes
       await expect(urlInput).toHaveAttribute('placeholder')
-      
+
       // Button should have accessible text
       await expect(submitButton).toContainText(/transcribe|submit/i)
 
@@ -284,7 +315,9 @@ test.describe('Transcribe Page', () => {
   })
 
   test.describe('Integration', () => {
-    test('should redirect to video page on successful submission', async ({ page }) => {
+    test('should redirect to video page on successful submission', async ({
+      page,
+    }) => {
       const urlInput = page.locator(testSelectors.urlInput)
       const submitButton = page.locator(testSelectors.submitButton)
 
@@ -294,9 +327,11 @@ test.describe('Transcribe Page', () => {
       // Should eventually navigate to video page
       // Note: This depends on the actual flow - might need to wait longer
       // or check for different behavior based on implementation
-      
-      await expect(page.getByText(testMessages.loading.processing)).toBeVisible()
-      
+
+      await expect(
+        page.getByText(testMessages.loading.processing),
+      ).toBeVisible()
+
       // The actual redirect behavior depends on the implementation
       // This test is structured to be flexible
     })

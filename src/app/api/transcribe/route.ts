@@ -708,7 +708,9 @@ export async function POST(request: NextRequest) {
     try {
       await cache.invalidateTranscript(videoId)
       await cache.setTranscript(videoId, updatedTranscript)
-      console.log(`♻️ Cache invalidated and transcript refreshed for: ${videoId}`)
+      console.log(
+        `♻️ Cache invalidated and transcript refreshed for: ${videoId}`,
+      )
     } catch (e) {
       console.warn('🟡 Cache refresh after summary update failed:', e)
     }
