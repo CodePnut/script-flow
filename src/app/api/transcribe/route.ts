@@ -248,19 +248,23 @@ export async function POST(request: NextRequest) {
     try {
       // Convert the stream to a buffer for Deepgram
       console.log('🔄 Converting audio stream to buffer...')
-      
+
       const chunks: Buffer[] = []
-      
+
       // Use traditional stream handling that's more compatible
-      audioStream.on('data', (chunk: any) => {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      audioStream.on('data', (chunk: unknown) => {
+        chunks.push(
+          Buffer.isBuffer(chunk)
+            ? chunk
+            : Buffer.from(chunk as string | Buffer),
+        )
       })
-      
+
       await new Promise<void>((resolve, reject) => {
         audioStream.on('end', () => resolve())
-        audioStream.on('error', (err: any) => reject(err))
+        audioStream.on('error', (err: Error) => reject(err))
       })
-      
+
       const audioBuffer = Buffer.concat(chunks)
       console.log(`✅ Audio buffer created: ${audioBuffer.length} bytes`)
 
@@ -276,13 +280,13 @@ export async function POST(request: NextRequest) {
       console.error('🔴 Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : 'No stack trace',
-        name: error instanceof Error ? error.constructor.name : 'Unknown type'
+        name: error instanceof Error ? error.constructor.name : 'Unknown type',
       })
       return NextResponse.json(
-        { 
+        {
           error: 'Transcription service error. Please try again.',
           details: error instanceof Error ? error.message : 'Unknown error',
-          debug: process.env.NODE_ENV === 'development' ? error : undefined
+          debug: process.env.NODE_ENV === 'development' ? error : undefined,
         },
         { status: 500 },
       )
