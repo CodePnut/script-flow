@@ -1,0 +1,177 @@
+
+> script-flow@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.3
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1304ms
+ ○ Compiling /api/transcribe ...
+ ✓ Compiled /api/transcribe in 1008ms (1078 modules)
+🟢 POST /api/transcribe - Request received
+🔍 Checking environment variables...
+🔍 DEEPGRAM_API_KEY exists: true
+🔍 Parsing request body...
+🔍 Request body: {"youtubeUrl":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+🔍 Fetching video info for: dQw4w9WgXcQ
+🚀 Initializing cache system...
+🟡 Redis client error (suppressing further errors): connect ECONNREFUSED 127.0.0.1:6379
+🟡 Failed to initialize Redis client: connect ECONNREFUSED 127.0.0.1:6379
+📝 Application will continue without caching
+🟡 Redis not available, running without cache
+✅ Video found: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)
+🔍 Checking cache for existing transcript: dQw4w9WgXcQ
+prisma:info Starting a sqlite pool with 33 connections.
+prisma:query SELECT `main`.`transcripts`.`id`, `main`.`transcripts`.`video_id`, `main`.`transcripts`.`title`, `main`.`transcripts`.`description`, `main`.`transcripts`.`summary`, `main`.`transcripts`.`language`, `main`.`transcripts`.`duration`, `main`.`transcripts`.`chapters`, `main`.`transcripts`.`utterances`, `main`.`transcripts`.`metadata`, `main`.`transcripts`.`deepgram_job`, `main`.`transcripts`.`status`, `main`.`transcripts`.`user_id`, `main`.`transcripts`.`ip_hash`, `main`.`transcripts`.`created_at`, `main`.`transcripts`.`updated_at` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`video_id` = ? AND `main`.`transcripts`.`status` = ? AND `main`.`transcripts`.`created_at` >= ?) LIMIT ? OFFSET ?
+🟡 Creating audio stream from YouTube...
+✅ Audio stream created
+🟡 Starting Deepgram transcription for video: dQw4w9WgXcQ
+🔴 Deepgram error: [Error [DeepgramUnknownError]: Unexpected token '<', "<html><bod"... is not valid JSON] {
+  __dgError: true,
+  originalError: SyntaxError: Unexpected token '<', "<html><bod"... is not valid JSON
+      at JSON.parse (<anonymous>)
+}
+ POST /api/transcribe 500 in 11126ms
+ ✓ Compiled in 224ms (884 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.4s (2429 modules)
+ GET /api/transcribe 404 in 2904ms
+ GET /api/transcribe 200 in 124ms
+🚀 Initializing cache system...
+🟡 Redis client error (suppressing further errors): connect ECONNREFUSED 127.0.0.1:6379
+🟡 Failed to initialize Redis client: connect ECONNREFUSED 127.0.0.1:6379
+📝 Application will continue without caching
+🟡 Redis not available, running without cache
+ ✓ Compiled /api/history in 442ms (2417 modules)
+ GET /api/history 400 in 512ms
+ ✓ Compiled /api/cache in -2270ms (2419 modules)
+🟡 Redis client error (suppressing further errors): connect ECONNREFUSED 127.0.0.1:6379
+🟡 Failed to initialize Redis client: connect ECONNREFUSED 127.0.0.1:6379
+📝 Application will continue without caching
+⚫ Cache Health: UNAVAILABLE
+   Redis: Disconnected - Redis client not available
+   Performance: 0% hit rate, 0ms avg latency
+   Memory: 0 keys
+   Alerts:
+     - Redis connection is not available
+   Recommendations:
+     - Check Redis server status and connection configuration
+ GET /api/cache?action=health 200 in -2182ms
+🚀 Initializing cache system...
+🟡 Redis not available, running without cache
+ ✓ Compiled /api/db-monitor in 216ms (2421 modules)
+prisma:query SELECT 1
+prisma:query SELECT 1
+ GET /api/db-monitor?action=health 200 in 264ms
+prisma:query SELECT `main`.`transcripts`.`id`, `main`.`transcripts`.`video_id`, `main`.`transcripts`.`title`, `main`.`transcripts`.`description`, `main`.`transcripts`.`duration`, `main`.`transcripts`.`language`, `main`.`transcripts`.`status`, `main`.`transcripts`.`created_at`, `main`.`transcripts`.`updated_at` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`ip_hash` = ? AND `main`.`transcripts`.`status` = ?) ORDER BY `main`.`transcripts`.`created_at` DESC LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`transcripts`.`id` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`ip_hash` = ? AND `main`.`transcripts`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+ GET /api/history?page=1&limit=10 200 in 40ms
+ ✓ Compiled /api/video/[videoId] in 441ms (2423 modules)
+ ⨯ [Error: Cannot find module './vendor-chunks/@redis.js'
+Require stack:
+- /home/velxsoft/my-project/personal-projects/script-flow/.next/server/webpack-runtime.js
+- /home/velxsoft/my-project/personal-projects/script-flow/.next/server/app/api/video/[videoId]/route.js
+- /home/velxsoft/my-project/personal-projects/script-flow/node_modules/next/dist/server/require.js
+- /home/velxsoft/my-project/personal-projects/script-flow/node_modules/next/dist/server/load-components.js
+- /home/velxsoft/my-project/personal-projects/script-flow/node_modules/next/dist/build/utils.js
+- /home/velxsoft/my-project/personal-projects/script-flow/node_modules/next/dist/server/dev/static-paths-worker.js
+- /home/velxsoft/my-project/personal-projects/script-flow/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/api/video/dQw4w9WgXcQ'
+}
+ ○ Compiling /_error ...
+🚀 Initializing cache system...
+🟡 Redis client error (suppressing further errors): connect ECONNREFUSED 127.0.0.1:6379
+🟡 Failed to initialize Redis client: connect ECONNREFUSED 127.0.0.1:6379
+📝 Application will continue without caching
+🟡 Redis not available, running without cache
+ ✓ Compiled /_error in 1505ms (2763 modules)
+ GET /api/video/dQw4w9WgXcQ 500 in 2610ms
+ ✓ Compiled /api/transcript/[id] in 363ms (2765 modules)
+Error: Route "/api/transcript/[id]" used `params.id`. `params` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at GET (src/app/api/transcript/[id]/route.ts:36:16)
+  34 |   try {
+  35 |     const params = (context as { params?: { id?: string } })?.params
+> 36 |     const id = params?.id || ''
+     |                ^
+  37 |
+  38 |     // Validate transcript ID format
+  39 |     if (!id || typeof id !== 'string') {
+prisma:query SELECT 1
+prisma:query SELECT `main`.`transcripts`.`id`, `main`.`transcripts`.`video_id`, `main`.`transcripts`.`title`, `main`.`transcripts`.`description`, `main`.`transcripts`.`duration`, `main`.`transcripts`.`summary`, `main`.`transcripts`.`language`, `main`.`transcripts`.`chapters`, `main`.`transcripts`.`utterances`, `main`.`transcripts`.`metadata`, `main`.`transcripts`.`status`, `main`.`transcripts`.`created_at`, `main`.`transcripts`.`updated_at` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/transcript/sample-id 404 in 786ms
+🟢 POST /api/transcribe - Request received
+🔍 Checking environment variables...
+🔍 DEEPGRAM_API_KEY exists: true
+🔍 Parsing request body...
+🔍 Request body: {"youtubeUrl":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+🔍 Fetching video info for: dQw4w9WgXcQ
+🚀 Initializing cache system...
+🟡 Redis client error (suppressing further errors): connect ECONNREFUSED 127.0.0.1:6379
+🟡 Failed to initialize Redis client: connect ECONNREFUSED 127.0.0.1:6379
+📝 Application will continue without caching
+🟡 Redis not available, running without cache
+✅ Video found: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)
+🔍 Checking cache for existing transcript: dQw4w9WgXcQ
+prisma:query SELECT 1
+prisma:query SELECT `main`.`transcripts`.`id`, `main`.`transcripts`.`video_id`, `main`.`transcripts`.`title`, `main`.`transcripts`.`description`, `main`.`transcripts`.`summary`, `main`.`transcripts`.`language`, `main`.`transcripts`.`duration`, `main`.`transcripts`.`chapters`, `main`.`transcripts`.`utterances`, `main`.`transcripts`.`metadata`, `main`.`transcripts`.`deepgram_job`, `main`.`transcripts`.`status`, `main`.`transcripts`.`user_id`, `main`.`transcripts`.`ip_hash`, `main`.`transcripts`.`created_at`, `main`.`transcripts`.`updated_at` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`video_id` = ? AND `main`.`transcripts`.`status` = ? AND `main`.`transcripts`.`created_at` >= ?) LIMIT ? OFFSET ?
+🟡 Creating audio stream from YouTube...
+✅ Audio stream created
+🟡 Starting Deepgram transcription for video: dQw4w9WgXcQ
+🔴 Deepgram error: [Error [DeepgramUnknownError]: Unexpected token '<', "<html><bod"... is not valid JSON] {
+  __dgError: true,
+  originalError: SyntaxError: Unexpected token '<', "<html><bod"... is not valid JSON
+      at JSON.parse (<anonymous>)
+}
+ POST /api/transcribe 500 in 9573ms
+ ✓ Compiled in 372ms (896 modules)
+ ✓ Compiled in 344ms (1978 modules)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`transcripts`.`id` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`ip_hash` = ? AND `main`.`transcripts`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`transcripts`.`id`, `main`.`transcripts`.`video_id`, `main`.`transcripts`.`title`, `main`.`transcripts`.`description`, `main`.`transcripts`.`duration`, `main`.`transcripts`.`language`, `main`.`transcripts`.`status`, `main`.`transcripts`.`created_at`, `main`.`transcripts`.`updated_at` FROM `main`.`transcripts` WHERE (`main`.`transcripts`.`ip_hash` = ? AND `main`.`transcripts`.`status` = ?) ORDER BY `main`.`transcripts`.`created_at` DESC LIMIT ? OFFSET ?
+ GET /api/history?page=1&limit=5 200 in 87ms
+🟡 Redis client error (suppressing further errors): connect ECONNREFUSED 127.0.0.1:6379
+🟡 Failed to initialize Redis client: connect ECONNREFUSED 127.0.0.1:6379
+📝 Application will continue without caching
+⚫ Cache Health: UNAVAILABLE
+   Redis: Disconnected - Redis client not available
+   Performance: 0% hit rate, 0ms avg latency
+   Memory: 0 keys
+   Alerts:
+     - Redis connection is not available
+   Recommendations:
+     - Check Redis server status and connection configuration
+ GET /api/cache?action=health 200 in 81ms
+🚀 Initializing cache system...
+🟡 Redis not available, running without cache
+📡 SIGTERM received, shutting down cache...
+🛑 Shutting down cache system...
+📊 Cache monitoring stopped
+📡 SIGTERM received, shutting down cache...
+🛑 Shutting down cache system...
+📊 Cache monitoring stopped
+📡 SIGTERM received, shutting down cache...
+🛑 Shutting down cache system...
+📊 Cache monitoring stopped
+📡 SIGTERM received, shutting down cache...
+🛑 Shutting down cache system...
+📊 Cache monitoring stopped
+📡 SIGTERM received, shutting down cache...
+🛑 Shutting down cache system...
+📊 Cache monitoring stopped
+📡 SIGTERM received, shutting down cache...
+🛑 Shutting down cache system...
+📊 Cache monitoring stopped
+✅ Cache system shutdown complete
+✅ Cache system shutdown complete
+✅ Cache system shutdown complete
+✅ Cache system shutdown complete
+✅ Cache system shutdown complete
+✅ Cache system shutdown complete
+[?25h

@@ -44,7 +44,7 @@ export interface VideoData {
   metadata: {
     language: string
     generatedAt: Date
-    source: 'mock' | 'deepgram' | 'whisper'
+    source: 'deepgram' | 'whisper'
     // AI summary metadata
     topics?: string[]
     keyPoints?: string[]

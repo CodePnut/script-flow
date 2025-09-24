@@ -126,7 +126,7 @@ export async function GET(request: NextRequest, context: unknown) {
         language: transcript.language,
         generatedAt: transcript.createdAt,
         source:
-          (transcript.metadata as { source?: 'mock' | 'deepgram' | 'whisper' })
+          (transcript.metadata as { source?: 'deepgram' | 'whisper' })
             ?.source || 'deepgram',
         // AI summary metadata
         topics: (transcript.metadata as { topics?: string[] })?.topics,

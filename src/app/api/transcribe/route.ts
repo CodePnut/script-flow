@@ -20,9 +20,9 @@
  */
 
 import { createClient } from '@deepgram/sdk'
-import ytdl from '@distube/ytdl-core'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import YTDlpWrap from 'yt-dlp-wrap'
 
 import { aiSummaryService } from '@/lib/ai-summary'
 import { cache } from '@/lib/cache'
@@ -70,46 +70,9 @@ const DEEPGRAM_OPTIONS = {
 const MAX_VIDEO_DURATION = 60 * 60 // 60 minutes in seconds
 
 /**
- * Mock transcript data for testing
+ * Initialize yt-dlp wrapper
  */
-const MOCK_TRANSCRIPT_DATA = {
-  utterances: [
-    {
-      id: 'utterance-1',
-      start: 0,
-      end: 5,
-      text: 'Welcome to this comprehensive tutorial on modern web development',
-      confidence: 0.95,
-      speaker: 0,
-    },
-    {
-      id: 'utterance-2',
-      start: 5,
-      end: 10,
-      text: "Today we'll be exploring React and Next.js",
-      confidence: 0.95,
-      speaker: 0,
-    },
-  ],
-  chapters: [
-    {
-      id: 'chapter-1',
-      title: 'Introduction',
-      start: 0,
-      end: 300,
-      description: 'Introduction to the course and setup',
-    },
-    {
-      id: 'chapter-2',
-      title: 'Environment Setup',
-      start: 300,
-      end: 600,
-      description: 'Setting up the development environment',
-    },
-  ],
-  summary:
-    'This tutorial provides a complete introduction to modern web development using React and Next.js. We cover everything from basic concepts to advanced patterns.',
-}
+const ytDlp = new YTDlpWrap('/tmp/yt-dlp')
 
 /**
  * POST /api/transcribe
@@ -125,112 +88,16 @@ export async function POST(request: NextRequest) {
     const hasDeepgramKey = !!process.env.DEEPGRAM_API_KEY
     console.log(`🔍 DEEPGRAM_API_KEY exists: ${hasDeepgramKey}`)
 
-    // If no Deepgram API key, use mock data for testing
+    // Require Deepgram API key - no mock data
     if (!process.env.DEEPGRAM_API_KEY) {
-      console.log('🟡 No Deepgram API key found, using mock data for testing')
-
-      // Validate request body
-      const body = await request.json()
-      const validation = transcribeRequestSchema.safeParse(body)
-
-      if (!validation.success) {
-        return NextResponse.json(
-          {
-            error: 'Invalid request',
-            details: validation.error.issues,
-          },
-          { status: 400 },
-        )
-      }
-
-      const { youtubeUrl } = validation.data
-      const videoId = extractVideoId(youtubeUrl)
-
-      if (!videoId) {
-        return NextResponse.json(
-          { error: 'Could not extract video ID from URL' },
-          { status: 400 },
-        )
-      }
-
-      // Get user identifier
-      const userHash = getUserIdentifier(request)
-
-      // Create mock transcript record
-      const transcriptRecord = await prisma.transcript.create({
-        data: {
-          videoId: videoId,
-          title: 'Mock Video Title',
-          description: 'A mock video for testing purposes',
-          duration: 1800, // 30 minutes
-          summary: MOCK_TRANSCRIPT_DATA.summary,
-          language: 'en',
-          chapters: MOCK_TRANSCRIPT_DATA.chapters,
-          utterances: MOCK_TRANSCRIPT_DATA.utterances,
-          metadata: {
-            source: 'mock',
-            model: 'mock-nova-2',
-            confidence: 0.95,
-            diarization: true,
-            generatedAt: new Date().toISOString(),
-          },
-          deepgramJob: `mock-job-${Date.now()}-${videoId}`,
-          status: 'completed',
-          ipHash: userHash,
+      console.log('🔴 No Deepgram API key found')
+      return NextResponse.json(
+        {
+          error: 'Deepgram API key required',
+          message: 'Please set DEEPGRAM_API_KEY environment variable',
         },
-      })
-
-      console.log('✅ Mock transcription completed for video:', videoId)
-
-      // Enrich mock with AI summary to provide realistic details
-      try {
-        const ai = await aiSummaryService.generateSummary(transcriptRecord.id)
-        await prisma.transcript.update({
-          where: { id: transcriptRecord.id },
-          data: {
-            summary: ai.summary,
-            metadata: {
-              source: 'mock',
-              model: 'mock-nova-2',
-              confidence: 0.95,
-              diarization: true,
-              generatedAt: new Date().toISOString(),
-              topics: ai.topics,
-              keyPoints: ai.keyPoints,
-              keyPointsRich: ai.keyPointsRich,
-              summaryConfidence: ai.confidence,
-              summaryStyle: ai.style,
-              aiSummaryGeneratedAt: new Date().toISOString(),
-            },
-          },
-        })
-      } catch (e) {
-        console.warn('⚠️ AI summary on mock failed:', e)
-      }
-
-      // Cache the mock transcript for future requests and invalidate video metadata
-      console.log(`💾 Caching mock transcript: ${videoId}`)
-      await cache.invalidateTranscript(videoId)
-      const refreshed = await prisma.transcript.findUnique({
-        where: { id: transcriptRecord.id },
-      })
-      if (refreshed) await cache.setTranscript(videoId, refreshed)
-
-      // Index the mock transcript for search (async, don't wait)
-      setImmediate(() => {
-        searchIndexing.indexTranscript(transcriptRecord.id).catch((error) => {
-          console.error('Failed to index mock transcript for search:', error)
-        })
-      })
-
-      return NextResponse.json({
-        transcriptId: transcriptRecord.id,
-        videoId: videoId,
-        title: 'Mock Video Title',
-        status: 'completed',
-        duration: 1800,
-        message: 'Mock transcription completed successfully',
-      })
+        { status: 500 },
+      )
     }
 
     // Validate request body
@@ -263,12 +130,25 @@ export async function POST(request: NextRequest) {
     // Get user identifier for privacy-preserving tracking
     const userHash = getUserIdentifier(request)
 
-    // Check if video exists and get basic info
-    let videoInfo: ytdl.videoInfo
+    // Check if video exists and get basic info using yt-dlp
+    let videoInfo: {
+      title: string
+      description?: string
+      duration: number
+      uploader?: string
+    }
     try {
       console.log('🔍 Fetching video info for:', videoId)
-      videoInfo = await ytdl.getInfo(videoId)
-      console.log('✅ Video found:', videoInfo.videoDetails.title)
+      const info = await ytDlp.getVideoInfo(youtubeUrl)
+      
+      videoInfo = {
+        title: info.title || 'Unknown Title',
+        description: info.description || null,
+        duration: Math.floor(info.duration || 0),
+        uploader: info.uploader || 'Unknown',
+      }
+      
+      console.log('✅ Video found:', videoInfo.title)
     } catch (error) {
       console.error('🔴 Error fetching video info:', error)
       console.error(
@@ -278,14 +158,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Video not found or not accessible. YouTube might have changed their API.',
+            'Video not found or not accessible. Please check the YouTube URL.',
         },
         { status: 404 },
       )
     }
 
     // Check video duration (cost guard-rail)
-    const lengthSeconds = parseInt(videoInfo.videoDetails.lengthSeconds)
+    const lengthSeconds = videoInfo.duration
     const allowLongVideo = request.headers.get('x-allow-long') === 'true'
 
     if (lengthSeconds > MAX_VIDEO_DURATION && !allowLongVideo) {
@@ -337,25 +217,34 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create audio stream from YouTube (stream directly to Deepgram)
+    // Download audio stream from YouTube using yt-dlp
     console.log('🟡 Creating audio stream from YouTube...')
-    const audioStream = ytdl(youtubeUrl, {
-      quality: 'highestaudio',
-      filter: 'audioonly',
-    })
+    let audioStream: NodeJS.ReadableStream
+    try {
+      // Use yt-dlp to create a readable stream of the audio
+      audioStream = ytDlp.execStream([
+        youtubeUrl,
+        '--format', 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
+        '--output', '-',
+        '--no-warnings'
+      ])
+      
+      console.log('✅ Audio stream created')
+    } catch (error) {
+      console.error('🔴 Error creating audio stream:', error)
+      return NextResponse.json(
+        { error: 'Could not extract audio from video. Please try again.' },
+        { status: 500 },
+      )
+    }
 
-    // Handle stream errors
-    audioStream.on('error', (error) => {
-      console.error('🔴 YouTube stream error:', error)
-    })
-
-    // Start Deepgram transcription with direct streaming (much faster)
+    // Start Deepgram transcription with audio stream
     console.log('🟡 Starting Deepgram transcription for video:', videoId)
     const deepgram = getDeepgramClient()
 
     let result, deepgramError
     try {
-      // Stream directly to Deepgram without buffering (3x faster)
+      // Stream the audio directly to Deepgram
       const response = await deepgram.listen.prerecorded.transcribeFile(
         audioStream,
         DEEPGRAM_OPTIONS,
@@ -600,8 +489,8 @@ export async function POST(request: NextRequest) {
     const transcriptRecord = await prisma.transcript.create({
       data: {
         videoId: videoId,
-        title: videoInfo.videoDetails.title,
-        description: videoInfo.videoDetails.description?.slice(0, 1000) || null,
+        title: videoInfo.title,
+        description: videoInfo.description?.slice(0, 1000) || null,
         duration: lengthSeconds,
         summary:
           result.results?.channels?.[0]?.alternatives?.[0]?.summaries?.[0]
@@ -615,6 +504,7 @@ export async function POST(request: NextRequest) {
           confidence: transcript.confidence,
           diarization: DEEPGRAM_OPTIONS.diarize,
           generatedAt: new Date().toISOString(),
+          uploader: videoInfo.uploader,
         },
         deepgramJob: `job-${Date.now()}-${videoId}`, // Mock job ID since we're doing direct processing
         status: 'completed',
@@ -719,7 +609,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       transcriptId: updatedTranscript.id,
       videoId: videoId,
-      title: videoInfo.videoDetails.title,
+      title: videoInfo.title,
       status: 'completed',
       duration: lengthSeconds,
       message: 'Transcription completed successfully',
