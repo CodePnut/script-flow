@@ -246,18 +246,44 @@ export async function POST(request: NextRequest) {
 
     let result, deepgramError
     try {
-      // Stream the audio directly to Deepgram
-      // Cast the stream to the expected type for Deepgram
+      // Convert the stream to a buffer for Deepgram
+      console.log('🔄 Converting audio stream to buffer...')
+      
+      const chunks: Buffer[] = []
+      
+      // Use traditional stream handling that's more compatible
+      audioStream.on('data', (chunk: any) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      })
+      
+      await new Promise<void>((resolve, reject) => {
+        audioStream.on('end', () => resolve())
+        audioStream.on('error', (err: any) => reject(err))
+      })
+      
+      const audioBuffer = Buffer.concat(chunks)
+      console.log(`✅ Audio buffer created: ${audioBuffer.length} bytes`)
+
+      // Send buffer to Deepgram
       const response = await deepgram.listen.prerecorded.transcribeFile(
-        audioStream as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        audioBuffer,
         DEEPGRAM_OPTIONS,
       )
       result = response.result
       deepgramError = response.error
     } catch (error) {
       console.error('🔴 Deepgram error:', error)
+      console.error('🔴 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        name: error instanceof Error ? error.constructor.name : 'Unknown type'
+      })
       return NextResponse.json(
-        { error: 'Transcription service error. Please try again.' },
+        { 
+          error: 'Transcription service error. Please try again.',
+          details: error instanceof Error ? error.message : 'Unknown error',
+          debug: process.env.NODE_ENV === 'development' ? error : undefined
+        },
         { status: 500 },
       )
     }
