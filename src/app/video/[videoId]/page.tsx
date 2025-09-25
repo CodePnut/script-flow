@@ -556,8 +556,6 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                       source: videoData.metadata.source,
                       language: videoData.metadata.language,
                     }}
-                    keyPoints={videoData.metadata.keyPoints}
-                    keyPointsRich={videoData.metadata.keyPointsRich}
                     confidence={videoData.metadata.summaryConfidence}
                     onRegenerate={handleRegenerateSummary}
                     onJumpTo={handleTimestampClick}

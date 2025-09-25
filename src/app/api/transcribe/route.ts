@@ -56,7 +56,7 @@ const DEEPGRAM_OPTIONS = {
   language: 'en',
   smart_format: true,
   diarize: true,
-  summarize: true,
+  summarize: 'v2',
   detect_topics: true,
   punctuate: true,
   utterances: true,
@@ -316,6 +316,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Debug: Log what Deepgram returned for summaries and topics
+    console.log('🔍 Deepgram summaries:', JSON.stringify(transcript.summaries, null, 2))
+    console.log('🔍 Deepgram topics:', JSON.stringify(transcript.topics, null, 2))
+
     // Process chapters from paragraphs - create meaningful chapters by grouping paragraphs
     const allParagraphs =
       result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
@@ -538,6 +542,9 @@ export async function POST(request: NextRequest) {
           diarization: DEEPGRAM_OPTIONS.diarize,
           generatedAt: new Date().toISOString(),
           uploader: videoInfo.uploader,
+          // Extract Deepgram's AI features (safely)
+          topics: transcript.topics ? JSON.parse(JSON.stringify(transcript.topics)) : [],
+          summaries: transcript.summaries ? JSON.parse(JSON.stringify(transcript.summaries)) : [],
         },
         deepgramJob: `job-${Date.now()}-${videoId}`, // Mock job ID since we're doing direct processing
         status: 'completed',
@@ -589,22 +596,33 @@ export async function POST(request: NextRequest) {
     let metaExtras: Record<string, unknown> = {}
 
     if (provider === 'deepgram') {
-      // Keep Deepgram summary, enrich only key points via heuristic/LLM
-      finalSummary = transcriptRecord.summary || aiSummary.summary
+      // Use Deepgram summary if it's substantial, otherwise fall back to AI summary
+      const deepgramSummary = transcriptRecord.summary
+      const isDeepgramSummaryGood = deepgramSummary && 
+        deepgramSummary.length > 20 && 
+        deepgramSummary !== '.' && 
+        !deepgramSummary.match(/^[\s\.,!?]*$/)
+      
+      finalSummary = isDeepgramSummaryGood ? deepgramSummary : aiSummary.summary
+      
+      // Combine Deepgram's structured data with AI-generated insights
+      const metadata = transcriptRecord.metadata as Record<string, unknown>
       metaExtras = {
-        topics: aiSummary.topics,
-        keyPoints: aiSummary.keyPoints,
-        keyPointsRich: aiSummary.keyPointsRich,
-        summaryConfidence: aiSummary.confidence,
+        // Prefer Deepgram's structured data when available
+        topics: Array.isArray(metadata?.topics) && metadata.topics.length > 0 
+          ? metadata.topics 
+          : aiSummary.topics,
+        summaryConfidence: isDeepgramSummaryGood ? 0.9 : aiSummary.confidence,
         summaryStyle: aiSummary.style,
+        summarySource: isDeepgramSummaryGood ? 'deepgram' : 'ai-fallback',
       }
+      
+      console.log(`📊 Summary source: ${isDeepgramSummaryGood ? 'Deepgram' : 'AI fallback'}`)
     } else {
       // Use AI summary result
       finalSummary = aiSummary.summary
       metaExtras = {
         topics: aiSummary.topics,
-        keyPoints: aiSummary.keyPoints,
-        keyPointsRich: aiSummary.keyPointsRich,
         summaryConfidence: aiSummary.confidence,
         summaryStyle: aiSummary.style,
       }

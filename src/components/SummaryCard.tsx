@@ -18,12 +18,11 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { formatTimestamp, type KeyPointRich } from '@/lib/transcript'
+import { formatTimestamp } from '@/lib/transcript'
 import { cn, formatDate } from '@/lib/utils'
 
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useToast } from './ui/use-toast'
 
 /**
@@ -46,10 +45,6 @@ interface SummaryCardProps {
     language: string
   }
 
-  /** AI-generated key points */
-  keyPoints?: string[]
-  /** Rich key points with categories and timestamps */
-  keyPointsRich?: KeyPointRich[]
   /** Summary confidence score (0-1) */
   confidence?: number
   /** Current summary style */
@@ -87,8 +82,6 @@ interface SummaryCardProps {
 export function SummaryCard({
   summary,
   metadata,
-  keyPoints = [],
-  keyPointsRich,
   confidence,
   summaryStyle = 'detailed',
   className,
@@ -102,7 +95,6 @@ export function SummaryCard({
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
-  const [activeTab, setActiveTab] = useState('summary')
   const { toast } = useToast()
 
   // Determine if summary should be truncated
@@ -277,127 +269,29 @@ export function SummaryCard({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Simplified Summary tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-lg">
-            <TabsTrigger
-              value="summary"
-              className={cn(
-                'text-xs font-medium transition-all duration-200 rounded-md',
-                'data-[state=active]:bg-background data-[state=active]:text-foreground',
-                'data-[state=active]:shadow-sm data-[state=active]:border',
-                'hover:bg-background/50 hover:text-foreground/80',
-                activeTab === 'summary' && 'ring-2 ring-primary/20',
-              )}
-            >
-              📊 Summary
-            </TabsTrigger>
-            <TabsTrigger
-              value="keypoints"
-              className={cn(
-                'text-xs font-medium transition-all duration-200 rounded-md',
-                'data-[state=active]:bg-background data-[state=active]:text-foreground',
-                'data-[state=active]:shadow-sm data-[state=active]:border',
-                'hover:bg-background/50 hover:text-foreground/80',
-                activeTab === 'keypoints' && 'ring-2 ring-primary/20',
-              )}
-            >
-              💡 Key Points
-            </TabsTrigger>
-          </TabsList>
+        {/* Summary content - no tabs needed since Key Points removed */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <p className="text-foreground leading-relaxed">
+              {displaySummary}
+            </p>
 
-          <TabsContent value="summary" className="mt-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <p className="text-foreground leading-relaxed">
-                  {displaySummary}
-                </p>
-
-                {shouldTruncate && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="mt-2 text-primary hover:text-primary/80 transition-colors"
-                  >
-                    {isExpanded ? 'Show Less' : 'Read More'}
-                  </Button>
-                )}
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="keypoints" className="mt-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {(keyPointsRich && keyPointsRich.length > 0) ||
-              keyPoints.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="text-sm text-muted-foreground mb-3 text-center">
-                    <strong>5 Key Insights</strong> extracted from the video
-                    content
-                  </div>
-                  {(keyPointsRich && keyPointsRich.length > 0
-                    ? keyPointsRich
-                    : keyPoints.map((t) => ({ text: t }) as KeyPointRich)
-                  ).map((point, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 group-hover:bg-primary/20 transition-colors">
-                        <span className="text-xs font-semibold text-primary">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-foreground text-sm leading-relaxed group-hover:text-primary/90 transition-colors">
-                          {point.text}
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {point.category && (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
-                              {point.category}
-                            </span>
-                          )}
-                          {typeof point.start === 'number' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                              onClick={() => onJumpTo && onJumpTo(point.start!)}
-                            >
-                              <Clock className="h-3 w-3 mr-1" />
-                              {formatTimestamp(Math.round(point.start!))}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Lightbulb className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No key points extracted yet.</p>
-                  <p className="text-sm">
-                    Try regenerating the summary to extract key points.
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-        </Tabs>
+            {shouldTruncate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-primary hover:text-primary/80 transition-colors"
+              >
+                {isExpanded ? 'Show Less' : 'Read More'}
+              </Button>
+            )}
+          </div>
+        </motion.div>
 
         {/* Metadata section */}
         {showMetadata && metadata && (
