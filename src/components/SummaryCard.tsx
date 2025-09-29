@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { formatTimestamp } from '@/lib/transcript'
+
 import { cn, formatDate } from '@/lib/utils'
 
 import { Button } from './ui/button'
@@ -90,7 +90,6 @@ export function SummaryCard({
   onExport,
   onShare,
   onRegenerate,
-  onJumpTo,
 }: SummaryCardProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)

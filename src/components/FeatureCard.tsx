@@ -24,6 +24,7 @@ export function FeatureCard({
 }: FeatureCardProps) {
   return (
     <Card
+      data-testid="feature-card"
       className={cn(
         'group transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 border-accent/20',
         className,

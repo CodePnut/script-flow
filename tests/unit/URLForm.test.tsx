@@ -1,186 +1,295 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { URLForm } from '@/components/URLForm'
+/**
+ * URLForm Component Unit Tests
+ * 
+ * Comprehensive unit tests for the URLForm component
+ * including validation, submission, and user interactions.
+ */
 
-// Mock framer-motion to avoid issues in tests
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: (props: any) => <div {...props}>{props.children}</div>,
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { URLForm } from '@/components/URLForm'
+import { toast } from 'sonner'
+
+// Mock the toast module
+jest.mock('sonner', () => ({
+  toast: {
+    error: jest.fn(),
+    success: jest.fn(),
   },
 }))
 
-describe('URLForm', () => {
-  const mockOnSubmit = vi.fn()
+// Mock window.location
+const mockLocation = {
+  href: '',
+}
+Object.defineProperty(window, 'location', {
+  value: mockLocation,
+  writable: true,
+})
 
+describe('URLForm Component', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    // Reset mocks before each test
+    jest.clearAllMocks()
+    mockLocation.href = ''
   })
 
-  it('renders form with correct elements', () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
+  describe('Component Rendering', () => {
+    test('should render form with all elements', () => {
+      render(<URLForm />)
 
-    expect(screen.getByRole('textbox')).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /transcribe/i }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('YouTube URL')).toBeInTheDocument()
-    expect(screen.getByText(/enter a youtube video url/i)).toBeInTheDocument()
-  })
-
-  it('validates empty URL submission', async () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
-
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(screen.getByText('Please enter a YouTube URL')).toBeInTheDocument()
+      // Check for form elements
+      expect(screen.getByLabelText('YouTube URL')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Transcribe' })).toBeInTheDocument()
+      expect(screen.getByText('Enter a YouTube video URL to generate an interactive transcript')).toBeInTheDocument()
     })
 
-    expect(mockOnSubmit).not.toHaveBeenCalled()
-  })
+    test('should render with custom className', () => {
+      const customClass = 'custom-form-class'
+      const { container } = render(<URLForm className={customClass} />)
 
-  it('validates invalid URL formats', async () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
-
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-
-    // Test invalid URL
-    fireEvent.change(input, { target: { value: 'not-a-url' } })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Please enter a valid YouTube URL'),
-      ).toBeInTheDocument()
+      // Check if custom class is applied
+      expect(container.firstChild).toHaveClass(customClass)
     })
 
-    expect(mockOnSubmit).not.toHaveBeenCalled()
+    test('should render with custom onSubmit handler', () => {
+      const mockOnSubmit = jest.fn()
+      render(<URLForm onSubmit={mockOnSubmit} />)
+
+      expect(screen.getByRole('button', { name: 'Transcribe' })).toBeInTheDocument()
+    })
   })
 
-  it('validates non-YouTube URLs', async () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
+  describe('Form Validation', () => {
+    test('should show validation error for empty URL', async () => {
+      render(<URLForm />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Submit empty form
+      fireEvent.click(submitButton)
 
-    // Test non-YouTube URL
-    fireEvent.change(input, { target: { value: 'https://example.com/video' } })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Please enter a valid YouTube URL'),
-      ).toBeInTheDocument()
+      // Wait for validation error
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a YouTube URL')).toBeInTheDocument()
+      })
     })
 
-    expect(mockOnSubmit).not.toHaveBeenCalled()
-  })
+    test('should show validation error for invalid YouTube URL', async () => {
+      render(<URLForm />)
 
-  it('accepts valid YouTube watch URLs', async () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Enter invalid URL
+      await userEvent.type(input, 'https://vimeo.com/123456789')
+      fireEvent.click(submitButton)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-
-    const validUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-    fireEvent.change(input, { target: { value: validUrl } })
-    fireEvent.click(submitButton)
-
-    await waitFor(
-      () => {
-        expect(mockOnSubmit).toHaveBeenCalledWith(validUrl)
-      },
-      { timeout: 2000 },
-    )
-  })
-
-  it('accepts valid YouTube short URLs', async () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
-
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-
-    const validUrl = 'https://youtu.be/dQw4w9WgXcQ'
-    fireEvent.change(input, { target: { value: validUrl } })
-    fireEvent.click(submitButton)
-
-    await waitFor(
-      () => {
-        expect(mockOnSubmit).toHaveBeenCalledWith(validUrl)
-      },
-      { timeout: 2000 },
-    )
-  })
-
-  it('accepts valid YouTube embed URLs', async () => {
-    render(<URLForm onSubmit={mockOnSubmit} />)
-
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-
-    const validUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    fireEvent.change(input, { target: { value: validUrl } })
-    fireEvent.click(submitButton)
-
-    await waitFor(
-      () => {
-        expect(mockOnSubmit).toHaveBeenCalledWith(validUrl)
-      },
-      { timeout: 2000 },
-    )
-  })
-
-  it('shows loading state during submission', async () => {
-    // Mock delay in submission
-    const delayedOnSubmit = vi.fn(
-      () => new Promise((resolve) => setTimeout(resolve, 100)),
-    )
-
-    render(<URLForm onSubmit={delayedOnSubmit} />)
-
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-
-    const validUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-    fireEvent.change(input, { target: { value: validUrl } })
-    fireEvent.click(submitButton)
-
-    // Should show loading state
-    await waitFor(() => {
-      expect(screen.getByText('Processing...')).toBeInTheDocument()
+      // Wait for validation error
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a valid YouTube URL')).toBeInTheDocument()
+      })
     })
 
-    // Should disable input during loading
-    expect(input).toBeDisabled()
-    expect(submitButton).toBeDisabled()
-  })
+    test('should show validation error for malformed URL', async () => {
+      render(<URLForm />)
 
-  it('handles submission errors gracefully', async () => {
-    // Mock console.error to prevent error logs in tests
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Enter malformed URL
+      await userEvent.type(input, 'not-a-url')
+      fireEvent.click(submitButton)
 
-    const errorOnSubmit = vi.fn(() =>
-      Promise.reject(new Error('Submission failed')),
-    )
-
-    render(<URLForm onSubmit={errorOnSubmit} />)
-
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /transcribe/i })
-
-    const validUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-    fireEvent.change(input, { target: { value: validUrl } })
-    fireEvent.click(submitButton)
-
-    // Should eventually return to normal state
-    await waitFor(() => {
-      expect(screen.getByText('Transcribe')).toBeInTheDocument()
-      expect(input).not.toBeDisabled()
-      expect(submitButton).not.toBeDisabled()
+      // Wait for validation error
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a valid YouTube URL')).toBeInTheDocument()
+      })
     })
 
-    consoleSpy.mockRestore()
+    test('should accept valid YouTube URLs', async () => {
+      render(<URLForm />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Test different valid YouTube URL formats
+      const validUrls = [
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'https://youtu.be/dQw4w9WgXcQ',
+        'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+      ]
+
+      for (const url of validUrls) {
+        await userEvent.clear(input)
+        await userEvent.type(input, url)
+        fireEvent.click(submitButton)
+
+        // Should not show validation errors
+        expect(screen.queryByText('Please enter a YouTube URL')).not.toBeInTheDocument()
+        expect(screen.queryByText('Please enter a valid YouTube URL')).not.toBeInTheDocument()
+      }
+    })
+  })
+
+  describe('Form Submission', () => {
+    test('should call custom onSubmit handler with valid URL', async () => {
+      const mockOnSubmit = jest.fn()
+      render(<URLForm onSubmit={mockOnSubmit} />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Enter valid URL
+      await userEvent.type(input, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      fireEvent.click(submitButton)
+
+      // Wait for submission
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      })
+    })
+
+    test('should navigate to transcribe page by default', async () => {
+      render(<URLForm />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Enter valid URL
+      await userEvent.type(input, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      fireEvent.click(submitButton)
+
+      // Wait for navigation
+      await waitFor(() => {
+        expect(mockLocation.href).toContain('/transcribe')
+        expect(mockLocation.href).toContain('url=')
+        expect(mockLocation.href).toContain(encodeURIComponent('https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
+      })
+    })
+
+    test('should show loading state during submission', async () => {
+      const mockOnSubmit = jest.fn()
+      render(<URLForm onSubmit={mockOnSubmit} />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Enter valid URL
+      await userEvent.type(input, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      fireEvent.click(submitButton)
+
+      // Check loading state
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Processing...' })).toBeInTheDocument()
+      })
+
+      // Button should be disabled during loading
+      expect(submitButton).toBeDisabled()
+    })
+  })
+
+  describe('Error Handling', () => {
+    test('should show error toast on submission failure', async () => {
+      // Mock onSubmit to throw error
+      const mockOnSubmit = jest.fn().mockRejectedValue(new Error('Submission failed'))
+      render(<URLForm onSubmit={mockOnSubmit} />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Enter valid URL
+      await userEvent.type(input, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      fireEvent.click(submitButton)
+
+      // Wait for error toast
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('❌ Submission failed', {
+          description: 'Please try again or check your connection.',
+        })
+      })
+    })
+  })
+
+  describe('User Interactions', () => {
+    test('should handle input changes', async () => {
+      render(<URLForm />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      
+      // Type in input
+      await userEvent.type(input, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      
+      expect(input).toHaveValue('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    })
+
+    test('should handle form submission with Enter key', async () => {
+      const mockOnSubmit = jest.fn()
+      render(<URLForm onSubmit={mockOnSubmit} />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      
+      // Enter valid URL
+      await userEvent.type(input, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      
+      // Submit with Enter key
+      fireEvent.keyDown(input, { key: 'Enter' })
+
+      // Wait for submission
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+      })
+    })
+
+    test('should clear validation errors on input change', async () => {
+      render(<URLForm />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const submitButton = screen.getByRole('button', { name: 'Transcribe' })
+      
+      // Submit empty form to trigger validation
+      fireEvent.click(submitButton)
+      
+      // Wait for validation error
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a YouTube URL')).toBeInTheDocument()
+      })
+      
+      // Start typing to clear error
+      await userEvent.type(input, 'h')
+      
+      // Error should be cleared
+      expect(screen.queryByText('Please enter a YouTube URL')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Accessibility', () => {
+    test('should have proper form labeling', () => {
+      render(<URLForm />)
+
+      const input = screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')
+      const label = screen.getByLabelText('YouTube URL')
+      
+      expect(label).toBeInTheDocument()
+      expect(input).toBeInTheDocument()
+    })
+
+    test('should be keyboard navigable', async () => {
+      render(<URLForm />)
+
+      // Tab to input
+      await userEvent.tab()
+      
+      // Should focus on input
+      expect(screen.getByPlaceholderText('https://www.youtube.com/watch?v=...')).toHaveFocus()
+      
+      // Tab to button
+      await userEvent.tab()
+      
+      // Should focus on button
+      expect(screen.getByRole('button', { name: 'Transcribe' })).toHaveFocus()
+    })
   })
 })

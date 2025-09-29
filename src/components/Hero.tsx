@@ -58,7 +58,7 @@ export function Hero() {
   }, [displayedText, isTyping, currentWordIndex, isInitialized])
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-transparent via-bg/30 to-bg py-32 md:py-48">
+    <section className="relative overflow-hidden bg-gradient-to-b from-transparent via-bg/30 to-bg py-32 md:py-48" data-testid="hero-section">
       <div className="container relative z-10 mx-auto px-4">
         <div className="mx-auto max-w-4xl text-center">
           {/* Main headline with typewriter effect */}

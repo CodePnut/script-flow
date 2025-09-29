@@ -1,0 +1,70 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ScriptFlow Logo ScriptFlow" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "ScriptFlow Logo" [ref=e7] [cursor=pointer]
+            - generic [ref=e8] [cursor=pointer]: ScriptFlow
+          - navigation [ref=e9]:
+            - link "Home" [ref=e10] [cursor=pointer]:
+              - /url: /
+            - link "Transcribe" [ref=e11] [cursor=pointer]:
+              - /url: /transcribe
+              - text: Transcribe
+            - link "Dashboard" [ref=e13] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Settings" [ref=e14] [cursor=pointer]:
+              - /url: /settings
+        - navigation [ref=e16]:
+          - button "Switch to light mode" [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e24]: Toggle theme
+    - main [ref=e25]:
+      - generic [ref=e27]:
+        - generic [ref=e30]:
+          - img [ref=e32]
+          - heading "Transcribe YouTube Videos" [level=1] [ref=e35]
+          - paragraph [ref=e36]: Transform any YouTube video into an interactive, searchable transcript. Simply paste the URL and let us handle the rest.
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e42]:
+              - generic [ref=e43]:
+                - img [ref=e44]
+                - heading "Enter Video URL" [level=2] [ref=e46]
+              - generic [ref=e49]:
+                - generic [ref=e50]: YouTube URL
+                - generic [ref=e51]:
+                  - textbox "https://www.youtube.com/watch?v=..." [ref=e52]
+                  - button "Transcribe" [ref=e53]
+                - paragraph [ref=e54]: Enter a YouTube video URL to generate an interactive transcript
+            - generic [ref=e55]:
+              - heading "What You'll Get" [level=3] [ref=e56]
+              - generic [ref=e57]:
+                - generic [ref=e60]:
+                  - heading "Interactive Transcript" [level=4] [ref=e61]
+                  - paragraph [ref=e62]: Click any word to jump to that moment in the video
+                - generic [ref=e65]:
+                  - heading "Searchable Content" [level=4] [ref=e66]
+                  - paragraph [ref=e67]: Find specific topics or quotes instantly
+                - generic [ref=e70]:
+                  - heading "Auto-Generated Chapters" [level=4] [ref=e71]
+                  - paragraph [ref=e72]: Navigate through key sections easily
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]: Recent Videos
+              - paragraph [ref=e78]: No videos transcribed yet
+            - generic [ref=e81]:
+              - img [ref=e82]
+              - paragraph [ref=e85]: No recent videos
+              - paragraph [ref=e86]: Your transcribed videos will appear here
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=e92] [cursor=pointer]:
+    - img [ref=e93] [cursor=pointer]
+  - alert [ref=e96]
+```

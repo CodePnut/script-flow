@@ -11,7 +11,7 @@ async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting Playwright global setup...')
 
   // Get the base URL from config
-  const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3003'
+  const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000'
 
   // Launch browser for setup tasks
   const browser = await chromium.launch()

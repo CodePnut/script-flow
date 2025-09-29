@@ -1,0 +1,282 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "ScriptFlow Logo ScriptFlow" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "ScriptFlow Logo" [ref=e7] [cursor=pointer]
+            - generic [ref=e8] [cursor=pointer]: ScriptFlow
+          - navigation [ref=e9]:
+            - link "Home" [ref=e10] [cursor=pointer]:
+              - /url: /
+            - link "Transcribe" [ref=e11] [cursor=pointer]:
+              - /url: /transcribe
+            - link "Dashboard" [ref=e12] [cursor=pointer]:
+              - /url: /dashboard
+              - text: Dashboard
+            - link "Settings" [ref=e14] [cursor=pointer]:
+              - /url: /settings
+        - navigation [ref=e16]:
+          - button "Switch to light mode" [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e24]: Toggle theme
+    - main [ref=e25]:
+      - generic [ref=e28]:
+        - generic [ref=e30]:
+          - img [ref=e32]
+          - generic [ref=e36]:
+            - heading "Dashboard" [level=1] [ref=e37]
+            - paragraph [ref=e38]: View and manage your transcribed videos
+        - generic [ref=e39]:
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: Your Transcripts
+              - generic [ref=e44]: 8 videos transcribed
+            - table [ref=e49]:
+              - rowgroup [ref=e50]:
+                - row "Title Date Duration Actions" [ref=e51]:
+                  - cell "Title" [ref=e52]:
+                    - button "Title" [ref=e53]:
+                      - text: Title
+                      - img
+                  - cell "Date" [ref=e54]:
+                    - button "Date" [ref=e55]:
+                      - text: Date
+                      - img
+                  - cell "Duration" [ref=e56]:
+                    - button "Duration" [ref=e57]:
+                      - text: Duration
+                      - img
+                  - cell "Actions" [ref=e58]
+              - rowgroup [ref=e59]:
+                - row "PSY - GANGNAM STYLE(강남스타일) M/V 3h ago 4:12" [ref=e60]:
+                  - cell "PSY - GANGNAM STYLE(강남스타일) M/V" [ref=e61]:
+                    - generic [ref=e62]: PSY - GANGNAM STYLE(강남스타일) M/V
+                  - cell "3h ago" [ref=e63]:
+                    - generic [ref=e64]: 3h ago
+                  - cell "4:12" [ref=e65]:
+                    - generic [ref=e66]: 4:12
+                  - cell [ref=e67]:
+                    - generic [ref=e68]:
+                      - link [ref=e69] [cursor=pointer]:
+                        - /url: /video/9bZkp7q19f0
+                        - img
+                      - link [ref=e70] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=9bZkp7q19f0
+                        - img
+                      - button [ref=e71]:
+                        - img
+                      - button [ref=e72]:
+                        - img
+                - row "Me at the zoo 3h ago 0:19" [ref=e73]:
+                  - cell "Me at the zoo" [ref=e74]:
+                    - generic [ref=e75]: Me at the zoo
+                  - cell "3h ago" [ref=e76]:
+                    - generic [ref=e77]: 3h ago
+                  - cell "0:19" [ref=e78]:
+                    - generic [ref=e79]: 0:19
+                  - cell [ref=e80]:
+                    - generic [ref=e81]:
+                      - link [ref=e82] [cursor=pointer]:
+                        - /url: /video/jNQXAC9IVRw
+                        - img
+                      - link [ref=e83] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=jNQXAC9IVRw
+                        - img
+                      - button [ref=e84]:
+                        - img
+                      - button [ref=e85]:
+                        - img
+                - row "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) 3h ago 3:33" [ref=e86]:
+                  - cell "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" [ref=e87]:
+                    - generic [ref=e88]: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)
+                  - cell "3h ago" [ref=e89]:
+                    - generic [ref=e90]: 3h ago
+                  - cell "3:33" [ref=e91]:
+                    - generic [ref=e92]: 3:33
+                  - cell [ref=e93]:
+                    - generic [ref=e94]:
+                      - link [ref=e95] [cursor=pointer]:
+                        - /url: /video/dQw4w9WgXcQ
+                        - img
+                      - link [ref=e96] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+                        - img
+                      - button [ref=e97]:
+                        - img
+                      - button [ref=e98]:
+                        - img
+                - row "The Only Reason I Can ACTUALLY Build With AI Now 4h ago 10:25" [ref=e99]:
+                  - cell "The Only Reason I Can ACTUALLY Build With AI Now" [ref=e100]:
+                    - generic [ref=e101]: The Only Reason I Can ACTUALLY Build With AI Now
+                  - cell "4h ago" [ref=e102]:
+                    - generic [ref=e103]: 4h ago
+                  - cell "10:25" [ref=e104]:
+                    - generic [ref=e105]: 10:25
+                  - cell [ref=e106]:
+                    - generic [ref=e107]:
+                      - link [ref=e108] [cursor=pointer]:
+                        - /url: /video/1cB2iqz_vnM
+                        - img
+                      - link [ref=e109] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=1cB2iqz_vnM
+                        - img
+                      - button [ref=e110]:
+                        - img
+                      - button [ref=e111]:
+                        - img
+                - 'row "2 BEST Controllers for FPS: G7Pro vs Blitz 2 8/29/2025 19:44" [ref=e112]':
+                  - 'cell "2 BEST Controllers for FPS: G7Pro vs Blitz 2" [ref=e113]':
+                    - generic [ref=e114]: "2 BEST Controllers for FPS: G7Pro vs Blitz 2"
+                  - cell "8/29/2025" [ref=e115]:
+                    - generic [ref=e116]: 8/29/2025
+                  - cell "19:44" [ref=e117]:
+                    - generic [ref=e118]: 19:44
+                  - cell [ref=e119]:
+                    - generic [ref=e120]:
+                      - link [ref=e121] [cursor=pointer]:
+                        - /url: /video/gB6T4OTjabM
+                        - img
+                      - link [ref=e122] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=gB6T4OTjabM
+                        - img
+                      - button [ref=e123]:
+                        - img
+                      - button [ref=e124]:
+                        - img
+                - row "Bash Apps Are INSANE… A New Way To Use Claude Code 8/29/2025 11:17" [ref=e125]:
+                  - cell "Bash Apps Are INSANE… A New Way To Use Claude Code" [ref=e126]:
+                    - generic [ref=e127]: Bash Apps Are INSANE… A New Way To Use Claude Code
+                  - cell "8/29/2025" [ref=e128]:
+                    - generic [ref=e129]: 8/29/2025
+                  - cell "11:17" [ref=e130]:
+                    - generic [ref=e131]: 11:17
+                  - cell [ref=e132]:
+                    - generic [ref=e133]:
+                      - link [ref=e134] [cursor=pointer]:
+                        - /url: /video/1_twhMU9AxM
+                        - img
+                      - link [ref=e135] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=1_twhMU9AxM
+                        - img
+                      - button [ref=e136]:
+                        - img
+                      - button [ref=e137]:
+                        - img
+                - 'row "Gemini CLI-UI: Powerful Web UI That SuperCHARGES Gemini CLI! 8/29/2025 9:40" [ref=e138]':
+                  - 'cell "Gemini CLI-UI: Powerful Web UI That SuperCHARGES Gemini CLI!" [ref=e139]':
+                    - generic [ref=e140]: "Gemini CLI-UI: Powerful Web UI That SuperCHARGES Gemini CLI!"
+                  - cell "8/29/2025" [ref=e141]:
+                    - generic [ref=e142]: 8/29/2025
+                  - cell "9:40" [ref=e143]:
+                    - generic [ref=e144]: 9:40
+                  - cell [ref=e145]:
+                    - generic [ref=e146]:
+                      - link [ref=e147] [cursor=pointer]:
+                        - /url: /video/mxPWtujDDLA
+                        - img
+                      - link [ref=e148] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=mxPWtujDDLA
+                        - img
+                      - button [ref=e149]:
+                        - img
+                      - button [ref=e150]:
+                        - img
+                - row "Gemini Code Assist Just Crushed the Competition – And It’s FREE 8/28/2025 11:10" [ref=e151]:
+                  - cell "Gemini Code Assist Just Crushed the Competition – And It’s FREE" [ref=e152]:
+                    - generic [ref=e153]: Gemini Code Assist Just Crushed the Competition – And It’s FREE
+                  - cell "8/28/2025" [ref=e154]:
+                    - generic [ref=e155]: 8/28/2025
+                  - cell "11:10" [ref=e156]:
+                    - generic [ref=e157]: 11:10
+                  - cell [ref=e158]:
+                    - generic [ref=e159]:
+                      - link [ref=e160] [cursor=pointer]:
+                        - /url: /video/lIWTuDAg62M
+                        - img
+                      - link [ref=e161] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=lIWTuDAg62M
+                        - img
+                      - button [ref=e162]:
+                        - img
+                      - button [ref=e163]:
+                        - img
+          - generic [ref=e165]:
+            - generic [ref=e166]:
+              - generic [ref=e168]:
+                - img [ref=e169]
+                - text: Database Health
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - generic [ref=e175]:
+                    - img [ref=e176]
+                    - generic [ref=e180]: Connection Status
+                  - generic [ref=e181]: Connected
+                - generic [ref=e182]:
+                  - generic [ref=e183]:
+                    - img [ref=e184]
+                    - generic [ref=e186]: Response Time
+                  - generic [ref=e187]: 1ms
+            - generic [ref=e188]:
+              - generic [ref=e190]:
+                - img [ref=e191]
+                - text: Performance Statistics
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - generic [ref=e196]:
+                    - generic [ref=e197]: Total Queries
+                    - generic [ref=e198]: "18"
+                  - generic [ref=e199]:
+                    - generic [ref=e200]: Avg Query Time
+                    - generic [ref=e201]: 10.1ms
+                  - generic [ref=e202]:
+                    - generic [ref=e203]: Slow Queries
+                    - generic [ref=e204]: "0"
+                  - generic [ref=e205]:
+                    - generic [ref=e206]: Fast Queries
+                    - generic [ref=e207]: "17"
+                - generic [ref=e208]:
+                  - generic [ref=e209]: Query Types
+                  - generic [ref=e210]:
+                    - generic [ref=e211]: user history
+                    - generic [ref=e212]: 18 queries, 10.1ms avg
+            - generic [ref=e213]:
+              - generic [ref=e215]:
+                - img [ref=e216]
+                - text: Search Index
+              - generic [ref=e220]:
+                - generic [ref=e221]:
+                  - generic [ref=e222]: Total Indexes
+                  - generic [ref=e223]: "0"
+                - generic [ref=e224]:
+                  - generic [ref=e225]: Avg Tokens
+                  - generic [ref=e226]: "0"
+                - generic [ref=e227]:
+                  - generic [ref=e228]: Unindexed
+                  - generic [ref=e229]: "0"
+                - generic [ref=e230]:
+                  - generic [ref=e231]: Last Indexed
+                  - generic [ref=e232]: Never
+            - generic [ref=e233]:
+              - generic [ref=e235]:
+                - img [ref=e236]
+                - text: Optimization Recommendations
+              - generic [ref=e240]: • Database performance looks good!
+            - generic [ref=e241]:
+              - generic [ref=e243]: Maintenance Actions
+              - generic [ref=e245]:
+                - button "Reset Metrics" [ref=e246]
+                - button "Cleanup Logs" [ref=e247]
+                - button "Index Transcripts" [ref=e248]
+                - button "Reindex All" [ref=e249]
+            - generic [ref=e250]: "Last updated: 5:28:46 PM"
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=e256] [cursor=pointer]:
+    - img [ref=e257] [cursor=pointer]
+  - alert [ref=e260]: ScriptFlow - YouTube Video Transcription
+```

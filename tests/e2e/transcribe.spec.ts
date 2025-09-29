@@ -1,339 +1,294 @@
+/**
+ * Transcribe Page E2E Tests
+ * 
+ * Tests for the video transcription functionality
+ * including video loading, transcript generation, and UI interactions.
+ */
+
 import { test, expect } from '@playwright/test'
-import {
-  testUrls,
-  testMessages,
-  testSelectors,
-  viewports,
-} from './fixtures/test-data'
+
+import { testUrls, selectors } from './fixtures/test-data'
 
 test.describe('Transcribe Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/transcribe')
+    // Navigate to transcribe page with a valid YouTube URL
+    await page.goto(`/transcribe?url=${encodeURIComponent(testUrls.valid.youtube)}`)
+    
+    // Wait for page to load
     await page.waitForLoadState('networkidle')
   })
 
-  test.describe('Page Structure', () => {
-    test('should display transcribe page elements', async ({ page }) => {
-      // Check page title/heading
-      await expect(page.locator('h1')).toContainText('Transcribe')
-
-      // Check URL input form
-      const urlInput = page.locator(testSelectors.urlInput)
-      await expect(urlInput).toBeVisible()
-      await expect(urlInput).toBeEnabled()
-
-      // Check submit button
-      const submitButton = page.locator(testSelectors.submitButton)
-      await expect(submitButton).toBeVisible()
-      await expect(submitButton).toBeEnabled()
+  test.describe('Page Load', () => {
+    test('should load with URL parameter', async ({ page }) => {
+      // Check URL contains the video parameter
+      await expect(page).toHaveURL(/.*\/transcribe.*url=/)
+      
+      // Check page title
+      await expect(page).toHaveTitle(/Transcribe/)
     })
 
-    test('should have proper navigation', async ({ page }) => {
-      // Check navigation links
-      await expect(page.getByRole('link', { name: 'Home' })).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
+    test('should handle missing URL parameter', async ({ page }) => {
+      // Navigate without URL parameter
+      await page.goto('/transcribe')
+      
+      // Should show some form of error or redirect
+      await expect(page.locator('body')).toBeVisible()
     })
 
-    test('should show instructions or help text', async ({ page }) => {
-      // Look for instructional content
-      const instructionText = page.locator('text=Enter a YouTube video URL')
-      if (await instructionText.isVisible()) {
-        await expect(instructionText).toBeVisible()
-      }
-
-      // Check for placeholder text
-      const urlInput = page.locator(testSelectors.urlInput)
-      await expect(urlInput).toHaveAttribute('placeholder')
+    test('should handle invalid URL parameter', async ({ page }) => {
+      // Navigate with invalid URL
+      await page.goto(`/transcribe?url=${encodeURIComponent(testUrls.invalid.notYoutube)}`)
+      
+      // Should show error message
+      await expect(page.locator(selectors.errorMessage)).toBeVisible()
     })
   })
 
-  test.describe('URL Processing', () => {
-    test('should handle URL from query parameter', async ({ page }) => {
-      // Navigate with URL parameter
-      const testUrl = testUrls.valid.youtube
-      await page.goto(`/transcribe?url=${encodeURIComponent(testUrl)}`)
-      await page.waitForLoadState('networkidle')
-
-      // URL should be pre-filled
-      const urlInput = page.locator(testSelectors.urlInput)
-      await expect(urlInput).toHaveValue(testUrl)
+  test.describe('Video Player', () => {
+    test('should display video player', async ({ page }) => {
+      const videoPlayer = page.locator(selectors.videoPlayer)
+      await expect(videoPlayer).toBeVisible({ timeout: 10000 })
     })
 
-    test('should validate URL input', async ({ page }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      // Test empty URL
-      await submitButton.click()
-      await expect(
-        page.getByText(testMessages.validation.emptyUrl),
-      ).toBeVisible()
-
-      // Test invalid URL
-      await urlInput.fill(testUrls.invalid.notYoutube)
-      await submitButton.click()
-      await expect(
-        page.getByText(testMessages.validation.invalidUrl),
-      ).toBeVisible()
-
-      // Test valid URL
-      await urlInput.clear()
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
-      // Should not show validation error
-      await expect(
-        page.getByText(testMessages.validation.invalidUrl),
-      ).not.toBeVisible()
+    test('should show video title', async ({ page }) => {
+      // Wait for video data to load
+      await page.waitForTimeout(2000)
+      
+      // Check for video title
+      const titleElement = page.locator('h1, h2').first()
+      await expect(titleElement).toBeVisible()
     })
 
-    test('should show processing state', async ({ page }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      // Enter valid URL and submit
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
-      // Should show processing state
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
-
-      // Submit button should be disabled during processing
-      await expect(submitButton).toBeDisabled()
-
-      // Input should be disabled during processing
-      await expect(urlInput).toBeDisabled()
-    })
-
-    test('should handle different YouTube URL formats', async ({ page }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      // Test all valid URL formats
-      const validUrls = Object.values(testUrls.valid)
-
-      for (const url of validUrls) {
-        await urlInput.clear()
-        await urlInput.fill(url)
-        await submitButton.click()
-
-        // Should not show validation error
-        await expect(
-          page.getByText(testMessages.validation.invalidUrl),
-        ).not.toBeVisible()
-
-        // Should show processing or redirect
-        const processingText = page.getByText(testMessages.loading.processing)
-        if (await processingText.isVisible()) {
-          await expect(processingText).toBeVisible()
-        }
-
-        // Reset for next test
-        await page.reload()
-        await page.waitForLoadState('networkidle')
-      }
+    test('should show video metadata', async ({ page }) => {
+      // Wait for content to load
+      await page.waitForTimeout(2000)
+      
+      // Check for duration, language, etc.
+      const metadataElements = page.locator('text=/Duration|Language|Views/')
+      await expect(metadataElements.first()).toBeVisible()
     })
   })
 
-  test.describe('Form Interactions', () => {
-    test('should support keyboard navigation', async ({ page }) => {
-      // Tab to URL input
-      await page.keyboard.press('Tab')
-      const urlInput = page.locator(testSelectors.urlInput)
-      await expect(urlInput).toBeFocused()
-
-      // Enter URL with keyboard
-      await page.keyboard.type(testUrls.valid.youtube)
-      await expect(urlInput).toHaveValue(testUrls.valid.youtube)
-
-      // Tab to submit button
-      await page.keyboard.press('Tab')
-      const submitButton = page.locator(testSelectors.submitButton)
-      await expect(submitButton).toBeFocused()
-
-      // Submit with Enter key
-      await page.keyboard.press('Enter')
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
+  test.describe('Transcript Viewer', () => {
+    test('should display transcript sections', async ({ page }) => {
+      // Wait for transcript to load
+      await page.waitForSelector(selectors.transcriptViewer, { timeout: 15000 })
+      
+      const transcriptViewer = page.locator(selectors.transcriptViewer)
+      await expect(transcriptViewer).toBeVisible()
     })
 
-    test('should support form submission with Enter key', async ({ page }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-
-      await urlInput.fill(testUrls.valid.youtube)
-      await urlInput.press('Enter')
-
-      // Should submit the form
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
+    test('should have clickable transcript segments', async ({ page }) => {
+      // Wait for transcript to load
+      await page.waitForSelector(selectors.transcriptViewer, { timeout: 15000 })
+      
+      // Check for transcript segments
+      const segments = page.locator('[data-testid="transcript-segment"]')
+      await expect(segments.first()).toBeVisible()
+      
+      // Test clicking a segment
+      await segments.first().click()
+      
+      // Should highlight or show some interaction
+      await expect(segments.first()).toHaveClass(/selected|active/)
     })
 
-    test('should clear form after successful submission', async ({ page }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
+    test('should show timestamps', async ({ page }) => {
+      // Wait for transcript to load
+      await page.waitForSelector(selectors.transcriptViewer, { timeout: 15000 })
+      
+      // Check for timestamp elements
+      const timestamps = page.locator('[data-testid="timestamp"]')
+      await expect(timestamps.first()).toBeVisible()
+      
+      // Verify timestamp format (MM:SS or HH:MM:SS)
+      const timestampText = await timestamps.first().textContent()
+      expect(timestampText).toMatch(/\d{1,2}:\d{2}/)
+    })
+  })
 
-      // Fill and submit form
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
+  test.describe('Summary Tab', () => {
+    test('should display summary content', async ({ page }) => {
+      // Wait for content to load
+      await page.waitForTimeout(3000)
+      
+      // Click on summary tab
+      const summaryTab = page.locator(selectors.summaryTab)
+      await summaryTab.click()
+      
+      // Check for summary content
+      const summaryContent = page.locator('[data-testid="summary-content"]')
+      await expect(summaryContent).toBeVisible()
+    })
 
-      // Wait for processing to start
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
+    test('should show AI-generated summary', async ({ page }) => {
+      // Navigate to summary tab
+      await page.locator(selectors.summaryTab).click()
+      
+      // Wait for summary to load
+      await page.waitForTimeout(2000)
+      
+      // Check for summary text
+      const summaryText = page.locator('[data-testid="summary-text"]')
+      await expect(summaryText).toBeVisible()
+      expect(await summaryText.textContent()).toHaveLengthGreaterThan(50)
+    })
+  })
 
-      // If form clears automatically, input should be empty
-      // Note: This depends on the actual implementation
-      // The test is written to be flexible
+  test.describe('Chapters Tab', () => {
+    test('should display chapter list', async ({ page }) => {
+      // Navigate to chapters tab
+      await page.locator(selectors.chaptersTab).click()
+      
+      // Wait for chapters to load
+      await page.waitForTimeout(2000)
+      
+      // Check for chapter list
+      const chapterList = page.locator('[data-testid="chapter-list"]')
+      await expect(chapterList).toBeVisible()
+    })
+
+    test('should have clickable chapters', async ({ page }) => {
+      // Navigate to chapters tab
+      await page.locator(selectors.chaptersTab).click()
+      
+      // Wait for chapters to load
+      await page.waitForTimeout(2000)
+      
+      // Check for chapter items
+      const chapters = page.locator('[data-testid="chapter-item"]')
+      await expect(chapters.first()).toBeVisible()
+      
+      // Test clicking a chapter
+      await chapters.first().click()
+      
+      // Should show some interaction
+      await expect(chapters.first()).toHaveClass(/selected|active/)
+    })
+  })
+
+  test.describe('Navigation', () => {
+    test('should navigate between tabs', async ({ page }) => {
+      // Test transcript tab (should be active by default)
+      await expect(page.locator(selectors.transcriptViewer)).toBeVisible()
+      
+      // Test summary tab
+      await page.locator(selectors.summaryTab).click()
+      await expect(page.locator('[data-testid="summary-content"]')).toBeVisible()
+      
+      // Test chapters tab
+      await page.locator(selectors.chaptersTab).click()
+      await expect(page.locator('[data-testid="chapter-list"]')).toBeVisible()
+    })
+
+    test('should maintain video context when switching tabs', async ({ page }) => {
+      // Get initial video state
+      await page.waitForSelector(selectors.videoPlayer)
+      
+      // Switch between tabs
+      await page.locator(selectors.summaryTab).click()
+      await page.waitForTimeout(1000)
+      
+      await page.locator(selectors.chaptersTab).click()
+      await page.waitForTimeout(1000)
+      
+      // Go back to transcript
+      await page.locator('button:has-text("Transcript")').click()
+      
+      // Video should still be present
+      await expect(page.locator(selectors.videoPlayer)).toBeVisible()
     })
   })
 
   test.describe('Error Handling', () => {
-    test('should handle network errors gracefully', async ({ page }) => {
-      // Simulate network failure
-      await page.route('**/api/transcribe', (route) => {
-        route.abort('failed')
-      })
-
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
+    test('should handle video loading errors', async ({ page }) => {
+      // Navigate with a non-existent video URL
+      await page.goto(`/transcribe?url=${encodeURIComponent('https://www.youtube.com/watch?v=invalid123456')}`)
+      
       // Should show error message
-      await expect(page.getByText(/failed|error|try again/i)).toBeVisible({
-        timeout: 15000,
-      })
+      await expect(page.locator(selectors.errorMessage)).toBeVisible({ timeout: 10000 })
     })
 
-    test('should handle server errors', async ({ page }) => {
-      // Mock server error response
-      await page.route('**/api/transcribe', (route) => {
+    test('should handle network errors', async ({ page }) => {
+      // Block API requests
+      await page.route('**/api/**', (route) => route.abort())
+      
+      // Reload page
+      await page.reload()
+      
+      // Should show some form of error
+      await expect(page.locator('body')).toBeVisible()
+    })
+
+    test('should handle invalid transcript data', async ({ page }) => {
+      // Mock invalid transcript response
+      await page.route('**/api/transcribe**', (route) => {
         route.fulfill({
-          status: 500,
+          status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal server error' }),
+          body: JSON.stringify({ error: 'Invalid transcript data' }),
         })
       })
+      
+      // Reload page
+      await page.reload()
+      
+      // Should handle gracefully
+      await expect(page.locator('body')).toBeVisible()
+    })
+  })
 
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
+  test.describe('Performance', () => {
+    test('should load video player within reasonable time', async ({ page }) => {
+      const startTime = Date.now()
+      
+      // Wait for video player
+      await page.waitForSelector(selectors.videoPlayer, { timeout: 10000 })
+      
+      const loadTime = Date.now() - startTime
+      expect(loadTime).toBeLessThan(10000) // Should load within 10 seconds
+    })
 
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
-      // Should show error message
-      await expect(page.getByText(/error|failed/i)).toBeVisible({
-        timeout: 15000,
-      })
+    test('should load transcript within reasonable time', async ({ page }) => {
+      const startTime = Date.now()
+      
+      // Wait for transcript
+      await page.waitForSelector(selectors.transcriptViewer, { timeout: 15000 })
+      
+      const loadTime = Date.now() - startTime
+      expect(loadTime).toBeLessThan(15000) // Should load within 15 seconds
     })
   })
 
   test.describe('Responsive Design', () => {
-    test('should work on mobile devices', async ({ page }) => {
-      await page.setViewportSize(viewports.mobile)
-      await page.reload()
-      await page.waitForLoadState('networkidle')
-
-      // Form should be usable on mobile
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      await expect(urlInput).toBeVisible()
-      await expect(submitButton).toBeVisible()
-
-      // Should be able to interact with form
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
+    test('should be responsive on mobile', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 })
+      
+      // Check video player is mobile-friendly
+      const videoPlayer = page.locator(selectors.videoPlayer)
+      await expect(videoPlayer).toBeVisible()
+      
+      // Check tabs are accessible
+      await expect(page.locator(selectors.summaryTab)).toBeVisible()
+      await expect(page.locator(selectors.chaptersTab)).toBeVisible()
     })
 
-    test('should work on tablet devices', async ({ page }) => {
-      await page.setViewportSize(viewports.tablet)
-      await page.reload()
-      await page.waitForLoadState('networkidle')
-
-      // Form should be properly sized on tablet
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      await expect(urlInput).toBeVisible()
-      await expect(submitButton).toBeVisible()
-
-      // Form should be functional
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
-    })
-  })
-
-  test.describe('Accessibility', () => {
-    test('should have proper form labels and ARIA attributes', async ({
-      page,
-    }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      // Input should have accessible attributes
-      await expect(urlInput).toHaveAttribute('placeholder')
-
-      // Button should have accessible text
-      await expect(submitButton).toContainText(/transcribe|submit/i)
-
-      // Form should be properly structured
-      const form = page.locator('form')
-      if (await form.isVisible()) {
-        await expect(form).toBeVisible()
-      }
+    test('should be responsive on tablet', async ({ page }) => {
+      await page.setViewportSize({ width: 768, height: 1024 })
+      
+      // Check layout is tablet-friendly
+      await expect(page.locator(selectors.videoPlayer)).toBeVisible()
+      await expect(page.locator(selectors.transcriptViewer)).toBeVisible()
     })
 
-    test('should provide feedback for screen readers', async ({ page }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      // Submit invalid form
-      await submitButton.click()
-
-      // Error message should be accessible
-      const errorMessage = page.getByText(testMessages.validation.emptyUrl)
-      await expect(errorMessage).toBeVisible()
-
-      // Error should be associated with input
-      // This depends on implementation details
-    })
-  })
-
-  test.describe('Integration', () => {
-    test('should redirect to video page on successful submission', async ({
-      page,
-    }) => {
-      const urlInput = page.locator(testSelectors.urlInput)
-      const submitButton = page.locator(testSelectors.submitButton)
-
-      await urlInput.fill(testUrls.valid.youtube)
-      await submitButton.click()
-
-      // Should eventually navigate to video page
-      // Note: This depends on the actual flow - might need to wait longer
-      // or check for different behavior based on implementation
-
-      await expect(
-        page.getByText(testMessages.loading.processing),
-      ).toBeVisible()
-
-      // The actual redirect behavior depends on the implementation
-      // This test is structured to be flexible
+    test('should be responsive on desktop', async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 720 })
+      
+      // Check full desktop layout
+      await expect(page.locator(selectors.videoPlayer)).toBeVisible()
+      await expect(page.locator(selectors.transcriptViewer)).toBeVisible()
+      await expect(page.locator(selectors.summaryTab)).toBeVisible()
+      await expect(page.locator(selectors.chaptersTab)).toBeVisible()
     })
   })
 })

@@ -1,10 +1,11 @@
 /**
  * Test Data and Fixtures for E2E Tests
- *
+ * 
  * Centralized test data management for consistent testing
  * across all Playwright test files.
  */
 
+// Test URLs for different scenarios
 export const testUrls = {
   valid: {
     youtube: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -20,6 +21,7 @@ export const testUrls = {
   },
 } as const
 
+// Mock video data for testing
 export const mockVideoData = {
   id: 'dQw4w9WgXcQ',
   title: 'Modern Web Development with React & Next.js',
@@ -55,18 +57,21 @@ export const mockVideoData = {
   ],
 } as const
 
-export const testSelectors = {
+// CSS selectors for key elements
+export const selectors = {
   // Navigation
-  navbar: '[data-testid="navbar"]',
-  homeLink: '[data-testid="home-link"]',
-  transcribeLink: '[data-testid="transcribe-link"]',
-  dashboardLink: '[data-testid="dashboard-link"]',
-  settingsLink: '[data-testid="settings-link"]',
+  navbar: 'header',
+  homeLink: 'nav a[href="/"]',
+  transcribeLink: 'nav a[href="/transcribe"]',
+  dashboardLink: 'nav a[href="/dashboard"]',
+  settingsLink: 'nav a[href="/settings"]',
 
-  // Forms
+  // URL Form
+  urlForm: 'form',
   urlInput: 'input[placeholder*="youtube.com"]',
   submitButton: 'button[type="submit"]',
-  transcribeButton: '[data-testid="transcribe-button"]',
+  transcribeButton: 'button:has-text("Transcribe")',
+  formMessage: '[data-slot="form-message"]',
 
   // Content
   heroSection: '[data-testid="hero-section"]',
@@ -84,7 +89,8 @@ export const testSelectors = {
   emptyState: '[data-testid="empty-state"]',
 } as const
 
-export const testMessages = {
+// Test messages and validation text
+export const messages = {
   validation: {
     emptyUrl: 'Please enter a YouTube URL',
     invalidUrl: 'Please enter a valid YouTube URL',
@@ -102,6 +108,7 @@ export const testMessages = {
   },
 } as const
 
+// Viewport configurations for responsive testing
 export const viewports = {
   mobile: { width: 375, height: 667 },
   tablet: { width: 768, height: 1024 },
@@ -109,19 +116,7 @@ export const viewports = {
   largeDesktop: { width: 1920, height: 1080 },
 } as const
 
-/**
- * Helper function to create test data variations
- */
-export function createTestVariations<T>(
-  baseData: T,
-  variations: Partial<T>[],
-): T[] {
-  return variations.map((variation) => ({ ...baseData, ...variation }))
-}
-
-/**
- * Common test utilities
- */
+// Test utilities and helpers
 export const testUtils = {
   /**
    * Wait for element to be visible with custom timeout
@@ -137,12 +132,42 @@ export const testUtils = {
   generateRandomId: () => Math.random().toString(36).substring(2, 15),
 
   /**
-   * Common viewport sizes for responsive testing
-   */
-  viewports,
-
-  /**
    * Delay utility for testing
    */
   delay: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
-}
+
+  /**
+   * Check if form has validation errors
+   */
+  hasValidationErrors: async (page: any) => {
+    const errorMessages = await page.locator(selectors.formMessage).all()
+    return errorMessages.length > 0
+  },
+
+  /**
+   * Get validation error text
+   */
+  getValidationErrorText: async (page: any) => {
+    const errorMessages = await page.locator(selectors.formMessage).all()
+    if (errorMessages.length > 0) {
+      return await errorMessages[0].textContent()
+    }
+    return null
+  },
+
+  /**
+   * Fill form and submit with validation check
+   */
+  submitFormWithValidation: async (page: any, url: string) => {
+    await page.locator(selectors.urlInput).fill(url)
+    await page.locator(selectors.submitButton).click()
+    
+    // Wait a bit for validation to trigger
+    await page.waitForTimeout(500)
+    
+    return {
+      hasErrors: await testUtils.hasValidationErrors(page),
+      errorText: await testUtils.getValidationErrorText(page),
+    }
+  },
+} as const
