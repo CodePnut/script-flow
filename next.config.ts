@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: '/Users/mark/Documents/Personal Projects/script-flow',
   images: {
     remotePatterns: [
       {

@@ -307,7 +307,16 @@ export function handleAPIError(error: unknown): string {
         return 'Rate limit exceeded. Please try again later.'
       case 500:
         // For server errors, show more details if available
+        if (errorData?.message) {
+          return errorData.message // Use user-friendly message from server
+        }
         if (errorData?.details) {
+          // Check for Deepgram authentication errors
+          if (errorData.details.toLowerCase().includes('unauthorized') || 
+              errorData.details.toLowerCase().includes('invalid') || 
+              errorData.details.toLowerCase().includes('forbidden')) {
+            return 'Transcription service is not properly configured. Please contact support.'
+          }
           return `${errorData.error || 'Server error'}: ${errorData.details}`
         }
         return (

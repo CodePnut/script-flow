@@ -188,7 +188,10 @@ export async function POST(request: NextRequest) {
       console.log(`✅ Cache hit for transcript: ${videoId}`)
       return NextResponse.json({
         transcriptId: cachedTranscript.id,
+        videoId: videoId,
+        title: videoInfo.title,
         status: 'completed',
+        duration: lengthSeconds,
         message: 'Using cached transcription',
       })
     }
@@ -212,7 +215,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         transcriptId: existingTranscript.id,
+        videoId: videoId,
+        title: videoInfo.title,
         status: 'completed',
+        duration: lengthSeconds,
         message: 'Using existing transcription',
       })
     }
@@ -282,11 +288,30 @@ export async function POST(request: NextRequest) {
         stack: error instanceof Error ? error.stack : 'No stack trace',
         name: error instanceof Error ? error.constructor.name : 'Unknown type',
       })
+
+      // Check for authentication errors
+      let errorMessage = 'Transcription service error. Please try again.'
+      let userMessage = 'We\'re experiencing technical difficulties. Please try again later.'
+      
+      if (error instanceof Error) {
+        const errorStr = error.message.toLowerCase()
+        if (errorStr.includes('unauthorized') || errorStr.includes('invalid') || errorStr.includes('forbidden')) {
+          errorMessage = 'Deepgram API authentication failed'
+          userMessage = 'Transcription service is not properly configured. Please contact support.'
+        } else if (errorStr.includes('rate limit')) {
+          errorMessage = 'Deepgram rate limit exceeded'
+          userMessage = 'Too many requests. Please try again in a few minutes.'
+        } else if (errorStr.includes('network') || errorStr.includes('timeout')) {
+          errorMessage = 'Network error with transcription service'
+          userMessage = 'Network issue. Please check your connection and try again.'
+        }
+      }
+
       return NextResponse.json(
         {
-          error: 'Transcription service error. Please try again.',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          debug: process.env.NODE_ENV === 'development' ? error : undefined,
+          error: errorMessage,
+          message: userMessage,
+          details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined,
         },
         { status: 500 },
       )

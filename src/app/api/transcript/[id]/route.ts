@@ -30,9 +30,9 @@ import type {
  *
  * Fetch transcript data by ID
  */
-export async function GET(request: NextRequest, context: unknown) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const params = (context as { params?: { id?: string } })?.params
+    const params = await context.params
     const id = params?.id || ''
 
     // Validate transcript ID format
