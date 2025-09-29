@@ -63,7 +63,8 @@ test.describe('Dashboard Page', () => {
       const titles = page.locator('[data-testid="video-title"]')
       if (await titles.count() > 0) {
         await expect(titles.first()).toBeVisible()
-        expect(await titles.first().textContent()).toHaveLengthGreaterThan(0)
+        const firstTitle = await titles.first().textContent()
+        expect(firstTitle && firstTitle.length > 0).toBeTruthy()
       }
     })
 

@@ -131,7 +131,8 @@ test.describe('Transcribe Page', () => {
       // Check for summary text
       const summaryText = page.locator('[data-testid="summary-text"]')
       await expect(summaryText).toBeVisible()
-      expect(await summaryText.textContent()).toHaveLengthGreaterThan(50)
+      const text = await summaryText.textContent()
+      expect(text && text.length > 50).toBeTruthy()
     })
   })
 
