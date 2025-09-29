@@ -199,7 +199,7 @@ export default defineConfig({
        * Use the development server
        */
       command: 'npm run dev',
-      port: 3001,
+      // port removed; using 'url' for readiness
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000, // 2 minutes
 
@@ -208,14 +208,8 @@ export default defineConfig({
        */
       url: 'http://localhost:3001',
 
-      /**
-       * Custom health check
-       */
-      healthCheck: {
-        url: 'http://localhost:3001/api/health',
-        timeout: 30000,
-        retries: 3,
-      },
+      // Health check removed: Playwright TestConfigWebServer does not support 'healthCheck'. Using 'url' for readiness.
+
     },
   ],
 
@@ -225,20 +219,8 @@ export default defineConfig({
   globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
   globalTeardown: require.resolve('./tests/e2e/global-teardown.ts'),
 
-  /**
-   * Test configuration
-   */
-  test: {
-    /**
-     * Maximum number of test failures to tolerate.
-     */
-    maxFailures: process.env.CI ? 10 : undefined,
+  // Removed invalid 'test' configuration block: not supported by Playwright config types.
 
-    /**
-     * Whether to exit after the first failure.
-     */
-    bail: process.env.CI ? 1 : 0,
-  },
 
   /**
    * Metadata configuration

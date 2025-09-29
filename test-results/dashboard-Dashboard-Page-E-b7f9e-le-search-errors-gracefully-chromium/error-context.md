@@ -53,11 +53,11 @@
                       - img
                   - cell "Actions" [ref=e58]
               - rowgroup [ref=e59]:
-                - row "PSY - GANGNAM STYLE(강남스타일) M/V 3h ago 4:12" [ref=e60]:
+                - row "PSY - GANGNAM STYLE(강남스타일) M/V 4h ago 4:12" [ref=e60]:
                   - cell "PSY - GANGNAM STYLE(강남스타일) M/V" [ref=e61]:
                     - generic [ref=e62]: PSY - GANGNAM STYLE(강남스타일) M/V
-                  - cell "3h ago" [ref=e63]:
-                    - generic [ref=e64]: 3h ago
+                  - cell "4h ago" [ref=e63]:
+                    - generic [ref=e64]: 4h ago
                   - cell "4:12" [ref=e65]:
                     - generic [ref=e66]: 4:12
                   - cell [ref=e67]:
@@ -72,11 +72,11 @@
                         - img
                       - button [ref=e72]:
                         - img
-                - row "Me at the zoo 3h ago 0:19" [ref=e73]:
+                - row "Me at the zoo 4h ago 0:19" [ref=e73]:
                   - cell "Me at the zoo" [ref=e74]:
                     - generic [ref=e75]: Me at the zoo
-                  - cell "3h ago" [ref=e76]:
-                    - generic [ref=e77]: 3h ago
+                  - cell "4h ago" [ref=e76]:
+                    - generic [ref=e77]: 4h ago
                   - cell "0:19" [ref=e78]:
                     - generic [ref=e79]: 0:19
                   - cell [ref=e80]:
@@ -91,11 +91,11 @@
                         - img
                       - button [ref=e85]:
                         - img
-                - row "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) 3h ago 3:33" [ref=e86]:
+                - row "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) 4h ago 3:33" [ref=e86]:
                   - cell "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" [ref=e87]:
                     - generic [ref=e88]: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)
-                  - cell "3h ago" [ref=e89]:
-                    - generic [ref=e90]: 3h ago
+                  - cell "4h ago" [ref=e89]:
+                    - generic [ref=e90]: 4h ago
                   - cell "3:33" [ref=e91]:
                     - generic [ref=e92]: 3:33
                   - cell [ref=e93]:
@@ -220,7 +220,7 @@
                   - generic [ref=e183]:
                     - img [ref=e184]
                     - generic [ref=e186]: Response Time
-                  - generic [ref=e187]: 2ms
+                  - generic [ref=e187]: 1ms
             - generic [ref=e188]:
               - generic [ref=e190]:
                 - img [ref=e191]
@@ -229,21 +229,21 @@
                 - generic [ref=e195]:
                   - generic [ref=e196]:
                     - generic [ref=e197]: Total Queries
-                    - generic [ref=e198]: "3"
+                    - generic [ref=e198]: "35"
                   - generic [ref=e199]:
                     - generic [ref=e200]: Avg Query Time
-                    - generic [ref=e201]: 2.3ms
+                    - generic [ref=e201]: 1.4ms
                   - generic [ref=e202]:
                     - generic [ref=e203]: Slow Queries
                     - generic [ref=e204]: "0"
                   - generic [ref=e205]:
                     - generic [ref=e206]: Fast Queries
-                    - generic [ref=e207]: "3"
+                    - generic [ref=e207]: "35"
                 - generic [ref=e208]:
                   - generic [ref=e209]: Query Types
                   - generic [ref=e210]:
                     - generic [ref=e211]: user history
-                    - generic [ref=e212]: 3 queries, 2.3ms avg
+                    - generic [ref=e212]: 35 queries, 1.4ms avg
             - generic [ref=e213]:
               - generic [ref=e215]:
                 - img [ref=e216]
@@ -273,7 +273,7 @@
                 - button "Cleanup Logs" [ref=e247]
                 - button "Index Transcripts" [ref=e248]
                 - button "Reindex All" [ref=e249]
-            - generic [ref=e250]: "Last updated: 5:30:07 PM"
+            - generic [ref=e250]: "Last updated: 5:40:52 PM"
   - region "Notifications (F8)":
     - list
   - button "Open Next.js Dev Tools" [ref=e256] [cursor=pointer]:
