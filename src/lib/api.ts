@@ -312,9 +312,11 @@ export function handleAPIError(error: unknown): string {
         }
         if (errorData?.details) {
           // Check for Deepgram authentication errors
-          if (errorData.details.toLowerCase().includes('unauthorized') || 
-              errorData.details.toLowerCase().includes('invalid') || 
-              errorData.details.toLowerCase().includes('forbidden')) {
+          if (
+            errorData.details.toLowerCase().includes('unauthorized') ||
+            errorData.details.toLowerCase().includes('invalid') ||
+            errorData.details.toLowerCase().includes('forbidden')
+          ) {
             return 'Transcription service is not properly configured. Please contact support.'
           }
           return `${errorData.error || 'Server error'}: ${errorData.details}`

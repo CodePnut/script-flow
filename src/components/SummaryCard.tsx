@@ -276,9 +276,7 @@ export function SummaryCard({
           transition={{ duration: 0.5 }}
         >
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <p className="text-foreground leading-relaxed">
-              {displaySummary}
-            </p>
+            <p className="text-foreground leading-relaxed">{displaySummary}</p>
 
             {shouldTruncate && (
               <Button

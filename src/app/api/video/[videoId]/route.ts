@@ -46,7 +46,10 @@ interface TranscriptMetadata {
  *
  * Fetch video data by YouTube video ID
  */
-export async function GET(request: NextRequest, context: { params: Promise<{ videoId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ videoId: string }> },
+) {
   try {
     const params = await context.params
     const videoId = params?.videoId || ''

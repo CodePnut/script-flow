@@ -291,19 +291,29 @@ export async function POST(request: NextRequest) {
 
       // Check for authentication errors
       let errorMessage = 'Transcription service error. Please try again.'
-      let userMessage = 'We\'re experiencing technical difficulties. Please try again later.'
-      
+      let userMessage =
+        "We're experiencing technical difficulties. Please try again later."
+
       if (error instanceof Error) {
         const errorStr = error.message.toLowerCase()
-        if (errorStr.includes('unauthorized') || errorStr.includes('invalid') || errorStr.includes('forbidden')) {
+        if (
+          errorStr.includes('unauthorized') ||
+          errorStr.includes('invalid') ||
+          errorStr.includes('forbidden')
+        ) {
           errorMessage = 'Deepgram API authentication failed'
-          userMessage = 'Transcription service is not properly configured. Please contact support.'
+          userMessage =
+            'Transcription service is not properly configured. Please contact support.'
         } else if (errorStr.includes('rate limit')) {
           errorMessage = 'Deepgram rate limit exceeded'
           userMessage = 'Too many requests. Please try again in a few minutes.'
-        } else if (errorStr.includes('network') || errorStr.includes('timeout')) {
+        } else if (
+          errorStr.includes('network') ||
+          errorStr.includes('timeout')
+        ) {
           errorMessage = 'Network error with transcription service'
-          userMessage = 'Network issue. Please check your connection and try again.'
+          userMessage =
+            'Network issue. Please check your connection and try again.'
         }
       }
 
@@ -311,7 +321,12 @@ export async function POST(request: NextRequest) {
         {
           error: errorMessage,
           message: userMessage,
-          details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined,
+          details:
+            process.env.NODE_ENV === 'development'
+              ? error instanceof Error
+                ? error.message
+                : 'Unknown error'
+              : undefined,
         },
         { status: 500 },
       )
@@ -342,8 +357,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Debug: Log what Deepgram returned for summaries and topics
-    console.log('🔍 Deepgram summaries:', JSON.stringify(transcript.summaries, null, 2))
-    console.log('🔍 Deepgram topics:', JSON.stringify(transcript.topics, null, 2))
+    console.log(
+      '🔍 Deepgram summaries:',
+      JSON.stringify(transcript.summaries, null, 2),
+    )
+    console.log(
+      '🔍 Deepgram topics:',
+      JSON.stringify(transcript.topics, null, 2),
+    )
 
     // Process chapters from paragraphs - create meaningful chapters by grouping paragraphs
     const allParagraphs =
@@ -568,8 +589,12 @@ export async function POST(request: NextRequest) {
           generatedAt: new Date().toISOString(),
           uploader: videoInfo.uploader,
           // Extract Deepgram's AI features (safely)
-          topics: transcript.topics ? JSON.parse(JSON.stringify(transcript.topics)) : [],
-          summaries: transcript.summaries ? JSON.parse(JSON.stringify(transcript.summaries)) : [],
+          topics: transcript.topics
+            ? JSON.parse(JSON.stringify(transcript.topics))
+            : [],
+          summaries: transcript.summaries
+            ? JSON.parse(JSON.stringify(transcript.summaries))
+            : [],
         },
         deepgramJob: `job-${Date.now()}-${videoId}`, // Mock job ID since we're doing direct processing
         status: 'completed',
@@ -623,26 +648,30 @@ export async function POST(request: NextRequest) {
     if (provider === 'deepgram') {
       // Use Deepgram summary if it's substantial, otherwise fall back to AI summary
       const deepgramSummary = transcriptRecord.summary
-      const isDeepgramSummaryGood = deepgramSummary && 
-        deepgramSummary.length > 20 && 
-        deepgramSummary !== '.' && 
+      const isDeepgramSummaryGood =
+        deepgramSummary &&
+        deepgramSummary.length > 20 &&
+        deepgramSummary !== '.' &&
         !deepgramSummary.match(/^[\s\.,!?]*$/)
-      
+
       finalSummary = isDeepgramSummaryGood ? deepgramSummary : aiSummary.summary
-      
+
       // Combine Deepgram's structured data with AI-generated insights
       const metadata = transcriptRecord.metadata as Record<string, unknown>
       metaExtras = {
         // Prefer Deepgram's structured data when available
-        topics: Array.isArray(metadata?.topics) && metadata.topics.length > 0 
-          ? metadata.topics 
-          : aiSummary.topics,
+        topics:
+          Array.isArray(metadata?.topics) && metadata.topics.length > 0
+            ? metadata.topics
+            : aiSummary.topics,
         summaryConfidence: isDeepgramSummaryGood ? 0.9 : aiSummary.confidence,
         summaryStyle: aiSummary.style,
         summarySource: isDeepgramSummaryGood ? 'deepgram' : 'ai-fallback',
       }
-      
-      console.log(`📊 Summary source: ${isDeepgramSummaryGood ? 'Deepgram' : 'AI fallback'}`)
+
+      console.log(
+        `📊 Summary source: ${isDeepgramSummaryGood ? 'Deepgram' : 'AI fallback'}`,
+      )
     } else {
       // Use AI summary result
       finalSummary = aiSummary.summary

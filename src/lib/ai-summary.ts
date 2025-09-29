@@ -693,7 +693,7 @@ export class AISummaryService {
   private generateDetailedSummary(content: ProcessedContent): string {
     const allText = content.sentences.join(' ')
     const wordCount = allText.split(' ').length
-    
+
     // For very short content
     if (content.sentences.length <= 2 || wordCount < 20) {
       return `This is a brief piece of content with ${content.sentences.length} main segments.`
@@ -702,9 +702,9 @@ export class AISummaryService {
     // Identify content type and create appropriate summary
     const contentType = this.identifyContentType(allText)
     const duration = Math.ceil(wordCount / 150) // Rough estimate of minutes
-    
+
     let summary = ''
-    
+
     // Start with content type identification
     switch (contentType) {
       case 'music':
@@ -725,10 +725,10 @@ export class AISummaryService {
       default:
         summary = `This video content`
     }
-    
+
     // Add duration context
     summary += ` lasting approximately ${duration} minute${duration !== 1 ? 's' : ''}.`
-    
+
     // Add key content insights if we have enough material
     if (content.sentences.length > 3) {
       const keyInsights = this.extractSimpleInsights(content.sentences)
@@ -736,7 +736,7 @@ export class AISummaryService {
         summary += ` The content includes ${keyInsights.slice(0, 2).join(' and ')}.`
       }
     }
-    
+
     return summary
   }
 
@@ -1102,32 +1102,52 @@ export class AISummaryService {
    */
   private identifyContentType(text: string): string {
     const lowerText = text.toLowerCase()
-    
+
     // Music-related patterns
-    if (/\b(song|music|sing|melody|rhythm|beat|lyrics|album|artist|dance)\b/.test(lowerText)) {
+    if (
+      /\b(song|music|sing|melody|rhythm|beat|lyrics|album|artist|dance)\b/.test(
+        lowerText,
+      )
+    ) {
       return 'music'
     }
-    
+
     // Tutorial/instructional patterns
-    if (/\b(how to|tutorial|step|guide|learn|teach|instruction|follow|setup)\b/.test(lowerText)) {
+    if (
+      /\b(how to|tutorial|step|guide|learn|teach|instruction|follow|setup)\b/.test(
+        lowerText,
+      )
+    ) {
       return 'tutorial'
     }
-    
+
     // Interview/conversation patterns
-    if (/\b(interview|conversation|discuss|talk|question|answer|guest|host)\b/.test(lowerText)) {
+    if (
+      /\b(interview|conversation|discuss|talk|question|answer|guest|host)\b/.test(
+        lowerText,
+      )
+    ) {
       return 'interview'
     }
-    
+
     // Presentation/educational patterns
-    if (/\b(present|explain|demonstrate|show|introduce|overview|concept|theory)\b/.test(lowerText)) {
+    if (
+      /\b(present|explain|demonstrate|show|introduce|overview|concept|theory)\b/.test(
+        lowerText,
+      )
+    ) {
       return 'presentation'
     }
-    
+
     // Entertainment patterns
-    if (/\b(funny|comedy|entertainment|fun|joke|laugh|story|adventure)\b/.test(lowerText)) {
+    if (
+      /\b(funny|comedy|entertainment|fun|joke|laugh|story|adventure)\b/.test(
+        lowerText,
+      )
+    ) {
       return 'entertainment'
     }
-    
+
     return 'general'
   }
 
@@ -1136,36 +1156,43 @@ export class AISummaryService {
    */
   private extractSimpleInsights(sentences: string[]): string[] {
     const insights: string[] = []
-    
+
     // Look for sentences with action words or descriptive content
-    const meaningfulSentences = sentences.filter(sentence => {
+    const meaningfulSentences = sentences.filter((sentence) => {
       const words = sentence.toLowerCase().split(' ')
-      return words.length >= 4 && words.length <= 20 && 
-             /\b(about|discusses|features|shows|includes|contains|focuses|explores)\b/.test(sentence.toLowerCase())
+      return (
+        words.length >= 4 &&
+        words.length <= 20 &&
+        /\b(about|discusses|features|shows|includes|contains|focuses|explores)\b/.test(
+          sentence.toLowerCase(),
+        )
+      )
     })
-    
+
     if (meaningfulSentences.length > 0) {
       insights.push('meaningful dialogue and content')
     }
-    
+
     // Check for emotional or descriptive language
-    const hasEmotionalContent = sentences.some(sentence => 
-      /\b(happy|sad|excited|amazing|beautiful|wonderful|incredible|fantastic)\b/i.test(sentence)
+    const hasEmotionalContent = sentences.some((sentence) =>
+      /\b(happy|sad|excited|amazing|beautiful|wonderful|incredible|fantastic)\b/i.test(
+        sentence,
+      ),
     )
-    
+
     if (hasEmotionalContent) {
       insights.push('expressive and emotional elements')
     }
-    
+
     // Check for action or movement
-    const hasActionContent = sentences.some(sentence =>
-      /\b(move|dance|jump|run|walk|go|come|play|perform)\b/i.test(sentence)
+    const hasActionContent = sentences.some((sentence) =>
+      /\b(move|dance|jump|run|walk|go|come|play|perform)\b/i.test(sentence),
     )
-    
+
     if (hasActionContent) {
       insights.push('dynamic action and movement')
     }
-    
+
     return insights
   }
 
@@ -1175,16 +1202,16 @@ export class AISummaryService {
   private generateDescriptiveSummary(content: ProcessedContent): string {
     const allText = content.sentences.join(' ')
     const wordCount = allText.split(' ').length
-    
+
     if (wordCount < 10) {
       return `This is a brief ${wordCount}-word content.`
     }
-    
+
     // Try to identify content type
     const hasMusic = /music|song|sing|melody|rhythm|beat/i.test(allText)
     const hasDialog = /said|tell|ask|answer|speak/i.test(allText)
     const hasInstruction = /how|step|first|then|next|follow/i.test(allText)
-    
+
     let summary = ''
     if (hasMusic) {
       summary = 'This appears to be music-related content'
@@ -1195,10 +1222,10 @@ export class AISummaryService {
     } else {
       summary = 'This content covers various topics'
     }
-    
+
     // Add a bit about the length and style
     summary += ` spanning approximately ${Math.ceil(wordCount / 150)} minutes of material.`
-    
+
     return summary
   }
 
@@ -1208,25 +1235,40 @@ export class AISummaryService {
   private extractMainThemes(content: ProcessedContent): string[] {
     const allText = content.sentences.join(' ').toLowerCase()
     const themes: string[] = []
-    
+
     // Common theme patterns
     const themePatterns = [
-      { pattern: /music|song|sing|melody|artist|album/, theme: 'music and entertainment' },
-      { pattern: /business|company|market|profit|revenue/, theme: 'business and finance' },
-      { pattern: /technology|software|computer|digital|app/, theme: 'technology' },
-      { pattern: /health|medical|doctor|treatment|wellness/, theme: 'health and wellness' },
+      {
+        pattern: /music|song|sing|melody|artist|album/,
+        theme: 'music and entertainment',
+      },
+      {
+        pattern: /business|company|market|profit|revenue/,
+        theme: 'business and finance',
+      },
+      {
+        pattern: /technology|software|computer|digital|app/,
+        theme: 'technology',
+      },
+      {
+        pattern: /health|medical|doctor|treatment|wellness/,
+        theme: 'health and wellness',
+      },
       { pattern: /education|learn|teach|student|school/, theme: 'education' },
       { pattern: /travel|trip|journey|destination|visit/, theme: 'travel' },
       { pattern: /food|recipe|cook|eat|restaurant/, theme: 'food and cooking' },
-      { pattern: /sport|game|play|team|competition/, theme: 'sports and games' },
+      {
+        pattern: /sport|game|play|team|competition/,
+        theme: 'sports and games',
+      },
     ]
-    
+
     for (const { pattern, theme } of themePatterns) {
       if (pattern.test(allText)) {
         themes.push(theme)
       }
     }
-    
+
     return themes
   }
 
@@ -1250,26 +1292,26 @@ export class AISummaryService {
    */
   private summarizeSection(sentences: string[]): string {
     if (sentences.length === 0) return ''
-    
+
     // For very short sections, just pick the most meaningful sentence
     if (sentences.length <= 2) {
-      return sentences.find(s => s.length > 20) || sentences[0] || ''
+      return sentences.find((s) => s.length > 20) || sentences[0] || ''
     }
-    
+
     // For longer sections, create a brief summary
     const combinedText = sentences.join(' ')
     const words = combinedText.split(' ')
-    
+
     if (words.length < 50) {
       return `The content covers ${this.extractKeyPhrase(combinedText)}.`
     }
-    
+
     // Extract the most meaningful parts
     const keyPhrases = this.extractKeyPhrases(combinedText)
     if (keyPhrases.length > 0) {
       return `It discusses ${keyPhrases.slice(0, 2).join(' and ')}.`
     }
-    
+
     return `It covers various related topics.`
   }
 
@@ -1278,11 +1320,23 @@ export class AISummaryService {
    */
   private extractKeyPhrase(text: string): string {
     const words = text.toLowerCase().split(' ')
-    const meaningfulWords = words.filter(word => 
-      word.length > 3 && 
-      !['this', 'that', 'with', 'from', 'they', 'have', 'been', 'will', 'were', 'said'].includes(word)
+    const meaningfulWords = words.filter(
+      (word) =>
+        word.length > 3 &&
+        ![
+          'this',
+          'that',
+          'with',
+          'from',
+          'they',
+          'have',
+          'been',
+          'will',
+          'were',
+          'said',
+        ].includes(word),
     )
-    
+
     return meaningfulWords.slice(0, 3).join(' ') || 'general topics'
   }
 
@@ -1292,21 +1346,32 @@ export class AISummaryService {
   private extractKeyPhrases(text: string): string[] {
     const sentences = text.split(/[.!?]+/)
     const phrases: string[] = []
-    
+
     for (const sentence of sentences) {
       const words = sentence.trim().toLowerCase().split(' ')
       if (words.length > 3 && words.length < 15) {
-        const meaningfulWords = words.filter(word => 
-          word.length > 3 && 
-          !['this', 'that', 'with', 'from', 'they', 'have', 'been', 'will', 'were'].includes(word)
+        const meaningfulWords = words.filter(
+          (word) =>
+            word.length > 3 &&
+            ![
+              'this',
+              'that',
+              'with',
+              'from',
+              'they',
+              'have',
+              'been',
+              'will',
+              'were',
+            ].includes(word),
         )
-        
+
         if (meaningfulWords.length >= 2) {
           phrases.push(meaningfulWords.slice(0, 4).join(' '))
         }
       }
     }
-    
+
     return phrases.slice(0, 3)
   }
 

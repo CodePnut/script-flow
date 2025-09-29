@@ -7,6 +7,7 @@ ScriptFlow is a modern YouTube video transcription and summarization platform bu
 ## Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 14 (App Router) with React 18
 - **Styling**: Tailwind CSS 3.5+ with dark-mode first design
 - **UI Components**: shadcn/ui with Radix UI primitives
@@ -17,6 +18,7 @@ ScriptFlow is a modern YouTube video transcription and summarization platform bu
 - **Forms**: React Hook Form with Zod validation
 
 ### Backend & APIs
+
 - **Runtime**: Node.js with Next.js server actions
 - **Database**: PostgreSQL with Prisma ORM
 - **Caching**: Redis for performance optimization
@@ -25,6 +27,7 @@ ScriptFlow is a modern YouTube video transcription and summarization platform bu
 - **Video Processing**: yt-dlp for YouTube video extraction
 
 ### Development & Testing
+
 - **Testing**: Vitest, Playwright, React Testing Library
 - **Storybook**: Component documentation and testing
 - **Linting**: ESLint with Next.js config
@@ -33,8 +36,7 @@ ScriptFlow is a modern YouTube video transcription and summarization platform bu
 
 ## Project Structure
 
-`
-script-flow/
+`script-flow/
  src/
     app/                    # Next.js App Router
        api/               # API routes
@@ -68,12 +70,12 @@ script-flow/
  public/                   # Static assets
  tests/                    # Test files
  docs/                     # Documentation
- scripts/                  # Build/utility scripts
-`
+ scripts/                  # Build/utility scripts`
 
 ## Core Features
 
 ### 1. Video Transcription
+
 - YouTube URL input with validation
 - Video metadata extraction (title, duration, thumbnails)
 - Deepgram integration for speech-to-text
@@ -81,18 +83,21 @@ script-flow/
 - Real-time progress tracking
 
 ### 2. AI-Powered Summarization
+
 - Automatic content summarization using LLM
 - Chapter extraction with timestamps
 - Key topic identification
 - Configurable summary length and style
 
 ### 3. Advanced Search & Discovery
+
 - Full-text search across transcripts
 - Search indexing for performance
 - Language-based filtering
 - Recent transcription history
 
 ### 4. User Experience
+
 - Dark/light mode toggle
 - Mobile-responsive design
 - Animated backgrounds and transitions
@@ -104,22 +109,26 @@ script-flow/
 ### Core Models
 
 **Transcript**
+
 - Stores transcription data and metadata
 - Links to video information
 - Tracks processing status and duration
 - Supports multiple languages
 
 **Video**
+
 - YouTube video metadata
 - Thumbnail URLs and duration
 - Processing status tracking
 
 **Summary**
+
 - AI-generated summaries
 - Chapter extractions
 - Configurable parameters
 
 **SearchIndex**
+
 - Full-text search optimization
 - Tokenized content storage
 - Language-specific indexing
@@ -127,6 +136,7 @@ script-flow/
 ### Performance Models
 
 **QueryPerformanceLog**
+
 - Database query performance tracking
 - Optimization analytics
 - Slow query identification
@@ -136,27 +146,22 @@ script-flow/
 ### RESTful Endpoints
 
 **Transcription Flow**
-`
-POST /api/transcribe          - Start transcription
+`POST /api/transcribe          - Start transcription
 GET  /api/transcript/[id]     - Get transcript data
 POST /api/transcript/[id]/regenerate-summary - Regenerate summary
-DELETE /api/transcript/[id]/delete - Delete transcript
-`
+DELETE /api/transcript/[id]/delete - Delete transcript`
 
 **Video Management**
-`
-GET /api/video/[videoId]      - Get video data
-GET /api/video/[videoId]/chapters - Get video chapters
-`
+`GET /api/video/[videoId]      - Get video data
+GET /api/video/[videoId]/chapters - Get video chapters`
 
 **System Operations**
-`
-GET /api/history              - Get recent transcriptions
+`GET /api/history              - Get recent transcriptions
 GET /api/cache/status         - Cache health check
-GET /api/db-monitor           - Database performance
-`
+GET /api/db-monitor           - Database performance`
 
 ### Server Actions
+
 - Form submissions for URL input
 - Settings updates
 - Data export operations
@@ -164,18 +169,21 @@ GET /api/db-monitor           - Database performance
 ## Performance Optimizations
 
 ### Caching Strategy
+
 - **Redis**: Session-based caching for API responses
 - **Database**: Query result caching with TTL
 - **CDN**: Static asset optimization via Next.js
 - **Browser**: Client-side caching with proper headers
 
 ### Database Optimization
+
 - Indexed columns for frequent queries
 - Query performance monitoring
 - Connection pooling with Prisma
 - Search indexing for full-text search
 
 ### Frontend Performance
+
 - Component lazy loading
 - Image optimization with next/image
 - Progressive loading for large transcripts
@@ -184,12 +192,14 @@ GET /api/db-monitor           - Database performance
 ## Security Considerations
 
 ### API Security
+
 - Rate limiting on transcription endpoints
 - Input validation with Zod schemas
 - CORS configuration for API routes
 - Environment variable protection
 
 ### Data Protection
+
 - No user authentication required (anonymous usage)
 - IP-based usage tracking (privacy-compliant)
 - Secure API key management
@@ -198,24 +208,30 @@ GET /api/db-monitor           - Database performance
 ## Deployment Architecture
 
 ### Environment Variables
+
 `env
+
 # Required
+
 DATABASE_URL=postgresql://...
 REDIS_URL=redis://...
 DEEPGRAM_API_KEY=...
 
 # Optional
+
 LLM_API_KEY=...
 NODE_ENV=production
 `
 
 ### Build Process
+
 1. Prisma migration and client generation
 2. Next.js build optimization
 3. Static asset optimization
 4. TypeScript compilation
 
 ### Monitoring
+
 - Database query performance logs
 - API response time tracking
 - Error boundary implementation
@@ -224,6 +240,7 @@ NODE_ENV=production
 ## Future Enhancements
 
 ### Planned Features
+
 - User authentication system
 - Advanced analytics dashboard
 - Multi-language UI support
@@ -232,6 +249,7 @@ NODE_ENV=production
 - Mobile application
 
 ### Scalability Improvements
+
 - Microservices architecture
 - Queue-based processing
 - Horizontal scaling support
@@ -240,18 +258,21 @@ NODE_ENV=production
 ## Development Guidelines
 
 ### Code Standards
+
 - TypeScript strict mode
 - ESLint configuration compliance
 - Prettier formatting
 - Component documentation with Storybook
 
 ### Testing Strategy
+
 - Unit tests with Vitest
 - Integration tests with Playwright
 - Component testing with React Testing Library
 - Performance testing for critical paths
 
 ### Contributing
+
 - Follow existing code patterns
 - Add tests for new features
 - Update documentation
