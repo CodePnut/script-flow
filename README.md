@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Database (Prisma)
+
+- Local development uses SQLite at `prisma/dev.db`.
+- `DATABASE_URL` is set to `file:./prisma/dev.db` in `.env` to ensure a single canonical DB path.
+- Always run Prisma commands from the project root using the provided scripts:
+
+```bash
+# Generate Prisma Client
+npm run prisma:generate
+
+# Apply migrations (dev)
+npm run prisma:migrate
+
+# Reset the database (dev)
+npm run prisma:reset
+```
+
+Running Prisma from inside the `prisma/` directory can create nested duplicate DB files (e.g., `prisma/prisma/dev.db`). Use the scripts above to avoid this.

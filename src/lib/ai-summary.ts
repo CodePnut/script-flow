@@ -704,50 +704,72 @@ export class AISummaryService {
     const allText = content.sentences.join(' ')
     const wordCount = allText.split(' ').length
 
-    // For very short content
+    // For very short content, keep a concise fallback
     if (content.sentences.length <= 2 || wordCount < 20) {
       return `This is a brief piece of content with ${content.sentences.length} main segments.`
     }
 
-    // Identify content type and create appropriate summary
-    const contentType = this.identifyContentType(allText)
-    const duration = Math.ceil(wordCount / 150) // Rough estimate of minutes
+    // Prefer actual duration from transcript processing; fallback to word-based estimate
+    const approxMinutes = Math.max(
+      1,
+      Math.round((content.totalDuration || 0) / 60) || Math.ceil(wordCount / 150),
+    )
 
-    let summary = ''
+    // Derive richer insights from transcript data
+    const themes = this.extractMainThemes(content)
+    const timeInsights = this.extractTimeBasedInsights(content)
+    const structureInsights = this.extractStructureInsights(content)
+    const engagementInsights = this.extractEngagementInsights(content)
+    const exampleInsights = this.extractExampleInsights(content)
 
-    // Start with content type identification
-    switch (contentType) {
-      case 'music':
-        summary = `This appears to be a music video or song`
-        break
-      case 'tutorial':
-        summary = `This content provides instructional guidance`
-        break
-      case 'interview':
-        summary = `This features a conversation or interview`
-        break
-      case 'presentation':
-        summary = `This is a presentation or educational content`
-        break
-      case 'entertainment':
-        summary = `This is entertainment-focused content`
-        break
-      default:
-        summary = `This video content`
+    const keyPointsRaw = this.extractKeyPoints(content)
+    const keyPoints = this.prioritizeKeyPoints(keyPointsRaw).slice(0, 3)
+
+    const openingCandidate = this.selectBestSentence(
+      content.sentences.slice(0, Math.min(3, content.sentences.length)),
+    )
+    const opening = openingCandidate
+      ? this.cleanupSentence(openingCandidate)
+      : null
+
+    const parts: string[] = []
+
+    // Intro paragraph grounded in actual content and duration
+    let intro = opening || 'This video presents key ideas and explanations'
+    intro += ` over approximately ${approxMinutes} minute${approxMinutes !== 1 ? 's' : ''}.`
+    if (themes.length > 0) {
+      intro += ` Key themes include ${themes.slice(0, 3).join(', ')}.`
+    }
+    parts.push(intro)
+
+    // Core content paragraph with concrete points and temporal insights
+    let core = ''
+    if (keyPoints.length > 0) {
+      core += ` It covers ${keyPoints.join('; ')}.`
+    }
+    if (timeInsights.length > 0) {
+      core += ` ${timeInsights.join(' ')}`
+    }
+    if (core.trim().length > 0) parts.push(core.trim())
+
+    // Structural and engagement context
+    const extras = [...structureInsights, ...engagementInsights, ...exampleInsights]
+    if (extras.length > 0) {
+      parts.push(` Additional context: ${extras.slice(0, 3).join('; ')}.`)
     }
 
-    // Add duration context
-    summary += ` lasting approximately ${duration} minute${duration !== 1 ? 's' : ''}.`
-
-    // Add key content insights if we have enough material
-    if (content.sentences.length > 3) {
-      const keyInsights = this.extractSimpleInsights(content.sentences)
-      if (keyInsights.length > 0) {
-        summary += ` The content includes ${keyInsights.slice(0, 2).join(' and ')}.`
-      }
+    // Conclusion grounded in ending content
+    const closingCandidate = this.selectBestSentence(
+      content.sentences.slice(Math.max(0, content.sentences.length - 3)),
+    )
+    const closing = closingCandidate
+      ? this.cleanupSentence(closingCandidate)
+      : null
+    if (closing) {
+      parts.push(` In conclusion, ${closing}.`)
     }
 
-    return summary
+    return parts.join(' ').replace(/\s+/g, ' ').trim()
   }
 
   /**
