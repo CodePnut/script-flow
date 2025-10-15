@@ -21,6 +21,7 @@ export interface SummaryParams {
   maxLength?: number
   includeKeyPoints?: boolean
   focusOnTopics?: string[]
+  enhanceForDeepgram?: boolean // Special flag for Deepgram summary enhancement
 }
 
 /**
@@ -202,12 +203,18 @@ export class AISummaryService {
           ]
 
     try {
-      const llm = await summarizeTranscriptLLM(chunks, {
+      const llmOptions = {
         style: params.style,
         maxLength: params.maxLength,
         focusOnTopics: params.focusOnTopics,
         videoTitle: title,
-      })
+        // Add special context for Deepgram enhancement
+        ...(params.enhanceForDeepgram && {
+          systemPrompt: 'Enhance and improve an existing Deepgram summary while preserving key insights and maintaining accuracy. Focus on clarity, completeness, and professional presentation.',
+        }),
+      }
+
+      const llm = await summarizeTranscriptLLM(chunks, llmOptions)
 
       const summaryText = this.cleanupSummary(llm.summary)
       const keyPoints = (llm.keyPoints || []).map((p) =>
@@ -216,11 +223,14 @@ export class AISummaryService {
       const topics = Array.isArray(llm.topics) ? llm.topics : []
       const wordCount = summaryText.split(' ').length
 
+      // Adjust confidence for Deepgram enhancement
+      const baseConfidence = params.enhanceForDeepgram ? 0.85 : 0.9
+
       return {
         summary: summaryText,
         keyPoints: keyPoints.slice(0, 5),
         topics,
-        confidence: 0.9, // LLM-backed summaries get higher base confidence
+        confidence: baseConfidence,
         style: params.style,
         wordCount,
         generatedAt: new Date(),

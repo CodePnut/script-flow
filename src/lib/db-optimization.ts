@@ -523,7 +523,7 @@ export const optimizedQueries = {
             duration: true,
             summary: true,
             language: true,
-            chapters: true,
+            // chapters: true, // Removed - chapters functionality deprecated
             utterances: true,
             metadata: true,
             status: true,

@@ -53,7 +53,7 @@ ScriptFlow is a modern YouTube video transcription and summarization platform bu
        ui/               # shadcn/ui components
        TranscriptViewer.tsx
        VideoPlayer.tsx
-       ChapterList.tsx
+       
        SummaryCard.tsx
        ...
     lib/                   # Utility functions

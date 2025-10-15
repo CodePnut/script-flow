@@ -21,7 +21,6 @@ import { prisma } from '@/lib/prisma'
 import type {
   VideoData,
   TranscriptSegment,
-  VideoChapter,
   KeyPointRich,
 } from '@/lib/transcript'
 
@@ -57,7 +56,7 @@ export async function GET(
         duration: true,
         summary: true,
         language: true,
-        chapters: true,
+        // chapters: true, // Removed - chapters functionality deprecated
         utterances: true,
         metadata: true,
         status: true,
@@ -124,7 +123,7 @@ export async function GET(
       thumbnailUrl: `https://img.youtube.com/vi/${transcript.videoId}/maxresdefault.jpg`,
       transcript: convertUtterancesToSegments(transcript.utterances),
       summary: transcript.summary || '',
-      chapters: convertChaptersToVideoChapters(transcript.chapters),
+      chapters: [], // Chapters functionality removed from UI
       metadata: {
         language: transcript.language,
         generatedAt: transcript.createdAt,
@@ -177,28 +176,6 @@ function convertUtterancesToSegments(utterances: unknown): TranscriptSegment[] {
           : undefined,
       confidence:
         typeof u.confidence === 'number' ? (u.confidence as number) : 0.95,
-    }
-  })
-}
-
-/**
- * Convert database chapters to frontend video chapters
- */
-function convertChaptersToVideoChapters(chapters: unknown): VideoChapter[] {
-  if (!chapters || !Array.isArray(chapters)) {
-    return []
-  }
-
-  return chapters.map((chapter: unknown) => {
-    const c = chapter as Record<string, unknown>
-    return {
-      id:
-        (c.id as string) ||
-        `chapter-${Math.random().toString(36).substr(2, 9)}`,
-      title: (c.title as string) || 'Untitled Chapter',
-      start: (c.start as number) || 0,
-      end: (c.end as number) || 0,
-      description: (c.description as string) || '',
     }
   })
 }

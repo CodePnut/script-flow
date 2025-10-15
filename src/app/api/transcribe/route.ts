@@ -19,6 +19,8 @@
  * - Production-ready logging
  */
 
+import fs from 'node:fs'
+
 import { createClient } from '@deepgram/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import YTDlpWrap from 'yt-dlp-wrap'
@@ -42,6 +44,70 @@ const transcribeRequestSchema = z.object({
 })
 
 /**
+ * Validates the quality and substance of a summary
+ * @param summary - The summary text to validate
+ * @returns Object containing quality score and validation result
+ */
+function validateSummaryQuality(summary: string | null): {
+  isValid: boolean
+  qualityScore: number
+  issues: string[]
+} {
+  if (!summary) {
+    return { isValid: false, qualityScore: 0, issues: ['Summary is null or undefined'] }
+  }
+
+  const issues: string[] = []
+  let qualityScore = 100
+
+  // Check minimum length
+  if (summary.length < 20) {
+    issues.push('Summary too short (minimum 20 characters)')
+    qualityScore -= 30
+  }
+
+  // Check for placeholder content
+  if (summary === '.' || summary.match(/^[\s\.,!?]*$/)) {
+    issues.push('Summary contains only punctuation or whitespace')
+    qualityScore -= 50
+  }
+
+  // Check for repetitive content
+  const sentences = summary.split(/[.!?]+/).filter(s => s.trim().length > 0)
+  if (sentences.length > 1) {
+    const uniqueSentences = new Set(sentences.map(s => s.trim().toLowerCase()))
+    const repetitionRatio = 1 - (uniqueSentences.size / sentences.length)
+    if (repetitionRatio > 0.5) {
+      issues.push('Summary contains repetitive content')
+      qualityScore -= 20
+    }
+  }
+
+  // Check for generic or template-like content
+  const genericPhrases = ['this video discusses', 'this transcript', 'the speaker mentions']
+  const hasGenericContent = genericPhrases.some(phrase => 
+    summary.toLowerCase().includes(phrase)
+  )
+  if (hasGenericContent) {
+    issues.push('Summary contains generic template phrases')
+    qualityScore -= 15
+  }
+
+  // Check for substantial content (not just "video about X")
+  const wordCount = summary.split(/\s+/).length
+  if (wordCount < 10) {
+    issues.push('Summary too brief (minimum 10 words)')
+    qualityScore -= 25
+  }
+
+  return {
+    isValid: qualityScore >= 70 && issues.length <= 2,
+    qualityScore: Math.max(0, qualityScore),
+    issues
+  }
+}
+
+/**
  * Deepgram client configuration
  * Following official Deepgram documentation best practices
  */
@@ -49,7 +115,7 @@ const getDeepgramClient = () => createClient(process.env.DEEPGRAM_API_KEY!)
 
 /**
  * Deepgram transcription options
- * Configured for optimal YouTube video processing
+ * Configured for optimal YouTube video processing with enhanced summarization
  */
 const DEEPGRAM_OPTIONS = {
   model: 'nova-2',
@@ -61,6 +127,9 @@ const DEEPGRAM_OPTIONS = {
   punctuate: true,
   utterances: true,
   paragraphs: true,
+  // Enhanced summarization settings
+  summarize_size: 'large', // Options: 'small', 'medium', 'large'
+  summarize_language: 'en',
 } as const
 
 /**
@@ -70,9 +139,26 @@ const DEEPGRAM_OPTIONS = {
 const MAX_VIDEO_DURATION = 60 * 60 // 60 minutes in seconds
 
 /**
- * Initialize yt-dlp wrapper
+ * Initialize yt-dlp wrapper with fallback download
  */
-const ytDlp = new YTDlpWrap('/tmp/yt-dlp')
+async function getYtDlp(): Promise<YTDlpWrap> {
+  const binaryPath = process.env.YTDLP_PATH || '/tmp/yt-dlp'
+  try {
+    if (!fs.existsSync(binaryPath)) {
+      console.log('🟡 yt-dlp not found, attempting download...')
+      await YTDlpWrap.downloadFromGithub(binaryPath)
+      console.log('✅ yt-dlp downloaded to', binaryPath)
+    }
+    return new YTDlpWrap(binaryPath)
+  } catch (e) {
+    console.warn(
+      '🟡 Failed to prepare yt-dlp at specific path, falling back to system binary',
+      e,
+    )
+    // Fall back to system-installed yt-dlp if available on PATH
+    return new YTDlpWrap()
+  }
+}
 
 /**
  * POST /api/transcribe
@@ -139,6 +225,7 @@ export async function POST(request: NextRequest) {
     }
     try {
       console.log('🔍 Fetching video info for:', videoId)
+      const ytDlp = await getYtDlp()
       const info = await ytDlp.getVideoInfo(youtubeUrl)
 
       videoInfo = {
@@ -228,6 +315,7 @@ export async function POST(request: NextRequest) {
     let audioStream: NodeJS.ReadableStream
     try {
       // Use yt-dlp to create a readable stream of the audio
+      const ytDlp = await getYtDlp()
       audioStream = ytDlp.execStream([
         youtubeUrl,
         '--format',
@@ -366,92 +454,7 @@ export async function POST(request: NextRequest) {
       JSON.stringify(transcript.topics, null, 2),
     )
 
-    // Process chapters from paragraphs - create meaningful chapters by grouping paragraphs
-    const allParagraphs =
-      result.results?.channels?.[0]?.alternatives?.[0]?.paragraphs
-        ?.paragraphs || []
-    const chapters: Array<{
-      id: string
-      title: string
-      start: number
-      end: number
-      description: string
-    }> = []
-
-    // Group paragraphs into chapters (every 3-5 paragraphs or significant time gaps)
-    let currentChapter: {
-      paragraphs: Array<{
-        sentences?: Array<{ text?: string }>
-        start: number
-        end: number
-      }>
-      start: number
-      end: number
-    } = {
-      paragraphs: [],
-      start: 0,
-      end: 0,
-    }
-
-    for (let i = 0; i < allParagraphs.length; i++) {
-      const paragraph = allParagraphs[i]
-
-      if (currentChapter.paragraphs.length === 0) {
-        currentChapter.start = paragraph.start
-      }
-
-      currentChapter.paragraphs.push(paragraph)
-      currentChapter.end = paragraph.end
-
-      // Create new chapter after 4 paragraphs or if there's a significant time gap (>30 seconds)
-      const nextParagraph = allParagraphs[i + 1]
-      const shouldCreateChapter =
-        currentChapter.paragraphs.length >= 4 ||
-        !nextParagraph ||
-        (nextParagraph && nextParagraph.start - paragraph.end > 30)
-
-      if (shouldCreateChapter && currentChapter.paragraphs.length > 0) {
-        const chapterTitle: string =
-          currentChapter.paragraphs[0]?.sentences?.[0]?.text
-            ?.split(' ')
-            .slice(0, 6)
-            .join(' ') || `Chapter ${chapters.length + 1}`
-
-        chapters.push({
-          id: `chapter-${chapters.length + 1}`,
-          title: chapterTitle,
-          start: currentChapter.start,
-          end: currentChapter.end,
-          description:
-            currentChapter.paragraphs
-              .map((p) => p.sentences?.[0]?.text)
-              .filter(Boolean)
-              .join(' ')
-              .slice(0, 200) + '...',
-        })
-
-        currentChapter = { paragraphs: [], start: 0, end: 0 }
-      }
-    }
-
-    // Fallback: if no meaningful chapters, create time-based chapters every 5 minutes
-    if (chapters.length === 0 && lengthSeconds > 300) {
-      const chapterDuration = 300 // 5 minutes
-      const numChapters = Math.ceil(lengthSeconds / chapterDuration)
-
-      for (let i = 0; i < numChapters; i++) {
-        const start = i * chapterDuration
-        const end = Math.min((i + 1) * chapterDuration, lengthSeconds)
-
-        chapters.push({
-          id: `chapter-${i + 1}`,
-          title: `Part ${i + 1}`,
-          start,
-          end,
-          description: `Video content from ${Math.floor(start / 60)}:${(start % 60).toString().padStart(2, '0')} to ${Math.floor(end / 60)}:${(end % 60).toString().padStart(2, '0')}`,
-        })
-      }
-    }
+    // Chapters functionality has been removed from UI, so we skip chapter generation
 
     // Process utterances for detailed transcript
     // Use paragraphs/sentences for better utterance grouping instead of individual words
@@ -579,7 +582,7 @@ export async function POST(request: NextRequest) {
           result.results?.channels?.[0]?.alternatives?.[0]?.summaries?.[0]
             ?.summary || null,
         language: 'en',
-        chapters: chapters,
+        // chapters: chapters, // Removed - chapters functionality deprecated
         utterances: utterances,
         metadata: {
           source: 'deepgram',
@@ -646,15 +649,25 @@ export async function POST(request: NextRequest) {
     let metaExtras: Record<string, unknown> = {}
 
     if (provider === 'deepgram') {
-      // Use Deepgram summary if it's substantial, otherwise fall back to AI summary
+      // Enhanced Deepgram summary validation and selection
       const deepgramSummary = transcriptRecord.summary
-      const isDeepgramSummaryGood =
-        deepgramSummary &&
-        deepgramSummary.length > 20 &&
-        deepgramSummary !== '.' &&
-        !deepgramSummary.match(/^[\s\.,!?]*$/)
+      const validation = validateSummaryQuality(deepgramSummary)
+      
+      console.log(`🔍 Deepgram summary validation:`, {
+        isValid: validation.isValid,
+        qualityScore: validation.qualityScore,
+        issues: validation.issues
+      })
 
-      finalSummary = isDeepgramSummaryGood ? deepgramSummary : aiSummary.summary
+      const isDeepgramSummaryGood = validation.isValid
+
+      if (isDeepgramSummaryGood) {
+        finalSummary = deepgramSummary!
+        console.log(`✅ Using high-quality Deepgram summary (score: ${validation.qualityScore}/100)`)
+      } else {
+        finalSummary = aiSummary.summary
+        console.log(`⚠️ Deepgram summary quality too low (score: ${validation.qualityScore}/100), using AI fallback`)
+      }
 
       // Combine Deepgram's structured data with AI-generated insights
       const metadata = transcriptRecord.metadata as Record<string, unknown>
@@ -664,9 +677,11 @@ export async function POST(request: NextRequest) {
           Array.isArray(metadata?.topics) && metadata.topics.length > 0
             ? metadata.topics
             : aiSummary.topics,
-        summaryConfidence: isDeepgramSummaryGood ? 0.9 : aiSummary.confidence,
+        summaryConfidence: isDeepgramSummaryGood ? Math.min(validation.qualityScore / 100, 0.95) : aiSummary.confidence,
         summaryStyle: aiSummary.style,
         summarySource: isDeepgramSummaryGood ? 'deepgram' : 'ai-fallback',
+        summaryQualityScore: validation.qualityScore,
+        summaryValidationIssues: validation.issues,
       }
 
       console.log(
@@ -679,6 +694,7 @@ export async function POST(request: NextRequest) {
         topics: aiSummary.topics,
         summaryConfidence: aiSummary.confidence,
         summaryStyle: aiSummary.style,
+        summarySource: 'ai-primary',
       }
     }
 

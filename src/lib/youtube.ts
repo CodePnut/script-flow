@@ -21,22 +21,57 @@ export function extractVideoId(url: string): string | null {
   // Remove leading/trailing whitespace
   const cleanUrl = url.trim()
 
-  // YouTube URL regex patterns
+  // If a raw video ID is provided, accept it
+  if (/^[a-zA-Z0-9_-]{11}$/.test(cleanUrl)) {
+    return cleanUrl
+  }
+
+  // Try structured URL parsing for robust handling of query params and paths
+  try {
+    const u = new URL(cleanUrl)
+    const hostname = u.hostname.replace(/^www\./, '')
+
+    // youtu.be short links: https://youtu.be/VIDEO_ID or with params
+    if (hostname === 'youtu.be') {
+      const id = u.pathname.split('/').filter(Boolean)[0]
+      if (id && /^[a-zA-Z0-9_-]{11}$/.test(id)) return id
+    }
+
+    // youtube.com variants
+    if (hostname.endsWith('youtube.com')) {
+      // Standard watch URLs: v param can appear anywhere in the query string
+      const v = u.searchParams.get('v')
+      if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v
+
+      // Shorts URLs: /shorts/VIDEO_ID
+      const shortsMatch = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]{11})/)
+      if (shortsMatch) return shortsMatch[1]
+
+      // Embed URLs: /embed/VIDEO_ID
+      const embedMatch = u.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/)
+      if (embedMatch) return embedMatch[1]
+
+      // Old format: /v/VIDEO_ID
+      const oldMatch = u.pathname.match(/\/v\/([a-zA-Z0-9_-]{11})/)
+      if (oldMatch) return oldMatch[1]
+    }
+  } catch {
+    // Not a full URL - fall back to regex patterns
+  }
+
+  // Regex fallbacks, including v= anywhere in query string
   const patterns = [
-    // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
-    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
-    // Short URL: https://youtu.be/VIDEO_ID
-    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-    // Embed URL: https://youtube.com/embed/VIDEO_ID
-    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    // Old format: https://youtube.com/v/VIDEO_ID
-    /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+    /(youtube\.com\/watch.*[?&]v=)([a-zA-Z0-9_-]{11})/,
+    /(youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+    /(youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
   ]
 
   for (const pattern of patterns) {
     const match = cleanUrl.match(pattern)
-    if (match && match[1]) {
-      return match[1]
+    if (match && match[2]) {
+      return match[2]
     }
   }
 

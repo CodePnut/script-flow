@@ -22,6 +22,7 @@ export interface LLMParams {
   maxLength?: number
   focusOnTopics?: string[]
   videoTitle?: string
+  systemPrompt?: string // Custom system prompt for special cases
 }
 
 export interface TranscriptChunk {
@@ -71,10 +72,10 @@ async function summarizeWholeWithOpenAI(
   fullText: string,
   params: LLMParams,
 ): Promise<LLMSummaryResult> {
-  const { style, maxLength, focusOnTopics, videoTitle } = params
+  const { style, maxLength, focusOnTopics, videoTitle, systemPrompt } = params
   const guidance = styleGuidance(style)
 
-  const system = [
+  const system = systemPrompt || [
     'You are an expert video summarizer.',
     'Summarize transcripts into concise, non-redundant prose.',
     'Do not repeat transcript lines verbatim; synthesize ideas.',
@@ -151,7 +152,7 @@ async function summarizeChunkedWithOpenAI(
   chunks: TranscriptChunk[],
   params: LLMParams,
 ): Promise<LLMSummaryResult> {
-  const { style, maxLength, focusOnTopics, videoTitle } = params
+  const { style, maxLength, focusOnTopics, videoTitle, systemPrompt } = params
 
   // 1) Summarize each chunk concisely
   const chunkSummaries: Array<{ summary: string; keyPoints: string[] }> = []
@@ -222,7 +223,7 @@ async function summarizeChunkedWithOpenAI(
   }
 
   // 2) Reduce: combine chunk summaries into final result
-  const system = [
+  const system = systemPrompt || [
     'You combine multiple segment summaries into a single coherent video summary.',
     'Synthesize, deduplicate, and produce a flowing summary and strongest 5 key points.',
     'Return strictly valid JSON.',

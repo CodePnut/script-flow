@@ -12,21 +12,21 @@ import {
   SkipForward,
   Eye,
   EyeOff,
+  Home,
+  Database,
+  Mic,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { useEffect, useRef, useState, use } from 'react'
 
-import { ChapterList } from '@/components/ChapterList'
 import { SummaryCard, type SummaryStyle } from '@/components/SummaryCard'
 import { TranscriptViewer } from '@/components/TranscriptViewer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VideoPlayer, type VideoPlayerRef } from '@/components/VideoPlayer'
 import { getVideo, handleAPIError, startTranscription } from '@/lib/api'
-import type { VideoData } from '@/lib/transcript'
-import { normalizeVideoId } from '@/lib/transcript'
+import { normalizeVideoId, type VideoData } from '@/lib/transcript'
 import { formatDate } from '@/lib/utils'
 
 /**
@@ -158,7 +158,7 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
   }
 
   /**
-   * Handle timestamp clicks from transcript/chapters
+   * Handle timestamp clicks from transcript
    */
   const handleTimestampClick = (seconds: number) => {
     console.log('VideoViewer - Timestamp clicked:', seconds)
@@ -368,22 +368,42 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  Back to Home
                 </Link>
               </Button>
 
-              <div className="flex-1 min-w-0">
-                <h1 className="text-lg font-semibold truncate">
+              {/* Breadcrumb Navigation */}
+              <nav className="flex items-center space-x-2 text-sm">
+                <Link
+                  href="/"
+                  className="text-muted-fg hover:text-fg transition-colors flex items-center gap-1"
+                >
+                  <Home className="h-3 w-3" />
+                  Home
+                </Link>
+                <span className="text-muted-fg">/</span>
+                <Link
+                  href="/dashboard"
+                  className="text-muted-fg hover:text-fg transition-colors flex items-center gap-1"
+                >
+                  <Database className="h-3 w-3" />
+                  Dashboard
+                </Link>
+                <span className="text-muted-fg">/</span>
+                <span className="text-fg font-medium truncate max-w-xs">
                   {videoData.title}
-                </h1>
-                <p className="text-sm text-muted-fg">
-                  {videoData.metadata.source} •{' '}
-                  {videoData.metadata.language.toUpperCase()}
-                </p>
-              </div>
+                </span>
+              </nav>
             </div>
 
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/transcribe">
+                  <Mic className="h-4 w-4 mr-2" />
+                  Transcribe
+                </Link>
+              </Button>
+
               <Button variant="ghost" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
@@ -398,6 +418,24 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
                   YouTube
                 </Link>
               </Button>
+            </div>
+          </div>
+
+          {/* Video Info Bar */}
+          <div className="mt-4 pt-4 border-t border-border/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-semibold truncate max-w-2xl">
+                  {videoData.title}
+                </h1>
+                <div className="hidden md:flex items-center gap-2 text-sm text-muted-fg">
+                  <span>{videoData.metadata.source}</span>
+                  <span>•</span>
+                  <span>{videoData.metadata.language.toUpperCase()}</span>
+                  <span>•</span>
+                  <span>{formatDate(videoData.metadata.generatedAt)}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -529,47 +567,22 @@ function VideoViewerContent({ videoId }: { videoId: string }) {
             className="lg:col-span-2"
           >
             <div className="space-y-6">
-              {/* Summary and chapters tabs */}
-              <Tabs defaultValue="summary" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1">
-                  <TabsTrigger
-                    value="summary"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
-                  >
-                    📊 Summary
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="chapters"
-                    className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground data-[state=active]:shadow-sm transition-all duration-200"
-                  >
-                    📖 Chapters
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="summary" className="mt-6">
-                  <SummaryCard
-                    summary={videoData.summary}
-                    metadata={{
-                      title: videoData.title,
-                      duration: videoData.duration,
-                      generatedAt: videoData.metadata.generatedAt,
-                      source: videoData.metadata.source,
-                      language: videoData.metadata.language,
-                    }}
-                    confidence={videoData.metadata.summaryConfidence}
-                    onRegenerate={handleRegenerateSummary}
-                    onJumpTo={handleTimestampClick}
-                  />
-                </TabsContent>
-
-                <TabsContent value="chapters" className="mt-6">
-                  <ChapterList
-                    chapters={videoData.chapters}
-                    currentTime={currentTime}
-                    onChapterClick={handleTimestampClick}
-                  />
-                </TabsContent>
-              </Tabs>
+              {/* Summary section - no more tabs needed */}
+              <div className="w-full">
+                <SummaryCard
+                  summary={videoData.summary}
+                  metadata={{
+                    title: videoData.title,
+                    duration: videoData.duration,
+                    generatedAt: videoData.metadata.generatedAt,
+                    source: videoData.metadata.source,
+                    language: videoData.metadata.language,
+                  }}
+                  confidence={videoData.metadata.summaryConfidence}
+                  onRegenerate={handleRegenerateSummary}
+                  onJumpTo={handleTimestampClick}
+                />
+              </div>
             </div>
           </motion.div>
         </div>

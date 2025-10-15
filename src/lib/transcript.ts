@@ -19,6 +19,7 @@ export interface TranscriptSegment {
 
 /**
  * Video chapter for navigation
+ * @deprecated Chapters functionality removed from UI
  */
 export interface VideoChapter {
   id: string
@@ -40,7 +41,7 @@ export interface VideoData {
   thumbnailUrl: string
   transcript: TranscriptSegment[]
   summary: string
-  chapters: VideoChapter[]
+  chapters: VideoChapter[] // @deprecated Chapters functionality removed from UI
   metadata: {
     language: string
     generatedAt: Date
@@ -161,20 +162,12 @@ export function normalizeVideoId(input: string): string {
   if (input.match(/^[a-zA-Z0-9_-]{11}$/)) {
     return input
   }
-
-  // Extract from YouTube URL
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
-    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-  ]
-
-  for (const pattern of patterns) {
-    const match = input.match(pattern)
-    if (match && match[1]) {
-      return match[1]
-    }
+  // Try robust extraction from YouTube URL formats
+  const extracted = extractVideoId(input)
+  if (extracted) {
+    return extracted
   }
 
   return input // Return as-is if no pattern matches
 }
+import { extractVideoId } from '@/lib/youtube'

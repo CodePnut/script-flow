@@ -1,11 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Database } from 'lucide-react'
+import { Database, Home, Mic, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useState, useCallback } from 'react'
 
 import { DatabaseMonitor } from '@/components/DatabaseMonitor'
 import { TranscriptTable } from '@/components/TranscriptTable'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { type VideoHistoryItem } from '@/hooks/useHistoryStore'
 import { getHistory, handleAPIError } from '@/lib/api'
@@ -91,6 +93,48 @@ export default function DashboardPage() {
   }
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/10"
+      >
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Home
+                </Link>
+              </Button>
+
+              {/* Breadcrumb Navigation */}
+              <nav className="flex items-center space-x-2 text-sm">
+                <Link
+                  href="/"
+                  className="text-muted-fg hover:text-fg transition-colors flex items-center gap-1"
+                >
+                  <Home className="h-3 w-3" />
+                  Home
+                </Link>
+                <span className="text-muted-fg">/</span>
+                <span className="text-fg font-medium">Dashboard</span>
+              </nav>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/transcribe">
+                  <Mic className="h-4 w-4 mr-2" />
+                  Transcribe
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <motion.div

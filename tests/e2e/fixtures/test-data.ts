@@ -49,12 +49,6 @@ export const mockVideoData = {
   },
   summary:
     'This tutorial provides a complete introduction to modern web development using React and Next.js.',
-  chapters: [
-    { title: 'Introduction', start: 0, end: 300 },
-    { title: 'Environment Setup', start: 300, end: 600 },
-    { title: 'Creating the Project', start: 600, end: 1200 },
-    { title: 'Advanced Features', start: 1200, end: 1800 },
-  ],
 } as const
 
 // CSS selectors for key elements
@@ -81,7 +75,6 @@ export const selectors = {
 
   // Tabs
   summaryTab: '[data-testid="summary-tab"]',
-  chaptersTab: '[data-testid="chapters-tab"]',
 
   // States
   loadingSpinner: '[data-testid="loading-spinner"]',

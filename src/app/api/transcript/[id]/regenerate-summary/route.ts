@@ -85,15 +85,80 @@ export async function POST(request: Request, context: unknown) {
     const provider = (process.env.SUMMARY_PROVIDER || 'local').toLowerCase()
 
     if (provider === 'deepgram') {
-      // For Deepgram, regeneration would require re-transcription to refresh
-      // the server-side summary. Advise client to re-run transcription.
-      return NextResponse.json(
-        {
-          error: 'Regeneration not supported for Deepgram provider',
-          hint: 'Re-run transcription to refresh Deepgram summary',
+      // For Deepgram, we can attempt to improve the summary by re-running AI generation
+      // with enhanced parameters, while preserving Deepgram's structured data
+      console.log(`🔄 Attempting Deepgram summary enhancement for transcript:`, transcriptId)
+      
+      // Fetch the full transcript to get existing metadata
+      const fullTranscript = await prisma.transcript.findUnique({
+        where: { id: transcriptId },
+        select: { 
+          id: true, 
+          summary: true,
+          metadata: true,
+          status: true 
         },
-        { status: 400 },
-      )
+      })
+
+      if (!fullTranscript?.metadata) {
+        return NextResponse.json(
+          {
+            error: 'Cannot enhance Deepgram summary without existing metadata',
+            hint: 'Re-run transcription to refresh Deepgram summary',
+          },
+          { status: 400 },
+        )
+      }
+
+      // Generate enhanced AI summary with specific parameters for Deepgram improvement
+      const enhancedSummary = await aiSummaryService.generateSummary(transcriptId, {
+        style: style || 'detailed',
+        maxLength: maxLength || 300,
+        includeKeyPoints: includeKeyPoints,
+        focusOnTopics: focusOnTopics,
+        enhanceForDeepgram: true, // Special flag for Deepgram enhancement
+      })
+
+      // Merge enhanced AI summary with existing Deepgram metadata
+      const existingMetadata = fullTranscript.metadata as Record<string, unknown>
+      const finalSummary = enhancedSummary.summary
+      const finalMetadata = {
+        ...existingMetadata,
+        enhancedSummary: enhancedSummary.summary,
+        enhancedKeyPoints: enhancedSummary.keyPoints,
+        enhancedTopics: enhancedSummary.topics,
+        enhancementGeneratedAt: new Date().toISOString(),
+        enhancementParams: {
+          style,
+          maxLength,
+          includeKeyPoints,
+          focusOnTopics,
+        },
+        summarySource: 'deepgram-enhanced',
+        summaryConfidence: enhancedSummary.confidence * 0.95, // Slightly reduce confidence for enhanced version
+      }
+
+      // Update transcript with enhanced summary
+      await prisma.transcript.update({
+        where: { id: transcriptId },
+        data: {
+          summary: finalSummary,
+          metadata: finalMetadata,
+        },
+      })
+
+      console.log(`✅ Deepgram summary enhanced successfully for transcript:`, transcriptId)
+
+      return NextResponse.json({
+        summary: finalSummary,
+        keyPoints: enhancedSummary.keyPoints,
+        keyPointsRich: enhancedSummary.keyPointsRich,
+        confidence: enhancedSummary.confidence,
+        style: enhancedSummary.style,
+        wordCount: enhancedSummary.wordCount,
+        enhanced: true,
+        message: 'Deepgram summary enhanced successfully',
+      })
     }
 
     // Generate new summary using AI service (local/openai/openrouter)

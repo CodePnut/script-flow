@@ -136,37 +136,7 @@ test.describe('Transcribe Page', () => {
     })
   })
 
-  test.describe('Chapters Tab', () => {
-    test('should display chapter list', async ({ page }) => {
-      // Navigate to chapters tab
-      await page.locator(selectors.chaptersTab).click()
-      
-      // Wait for chapters to load
-      await page.waitForTimeout(2000)
-      
-      // Check for chapter list
-      const chapterList = page.locator('[data-testid="chapter-list"]')
-      await expect(chapterList).toBeVisible()
-    })
 
-    test('should have clickable chapters', async ({ page }) => {
-      // Navigate to chapters tab
-      await page.locator(selectors.chaptersTab).click()
-      
-      // Wait for chapters to load
-      await page.waitForTimeout(2000)
-      
-      // Check for chapter items
-      const chapters = page.locator('[data-testid="chapter-item"]')
-      await expect(chapters.first()).toBeVisible()
-      
-      // Test clicking a chapter
-      await chapters.first().click()
-      
-      // Should show some interaction
-      await expect(chapters.first()).toHaveClass(/selected|active/)
-    })
-  })
 
   test.describe('Navigation', () => {
     test('should navigate between tabs', async ({ page }) => {
@@ -176,10 +146,6 @@ test.describe('Transcribe Page', () => {
       // Test summary tab
       await page.locator(selectors.summaryTab).click()
       await expect(page.locator('[data-testid="summary-content"]')).toBeVisible()
-      
-      // Test chapters tab
-      await page.locator(selectors.chaptersTab).click()
-      await expect(page.locator('[data-testid="chapter-list"]')).toBeVisible()
     })
 
     test('should maintain video context when switching tabs', async ({ page }) => {
@@ -188,9 +154,6 @@ test.describe('Transcribe Page', () => {
       
       // Switch between tabs
       await page.locator(selectors.summaryTab).click()
-      await page.waitForTimeout(1000)
-      
-      await page.locator(selectors.chaptersTab).click()
       await page.waitForTimeout(1000)
       
       // Go back to transcript
@@ -271,7 +234,6 @@ test.describe('Transcribe Page', () => {
       
       // Check tabs are accessible
       await expect(page.locator(selectors.summaryTab)).toBeVisible()
-      await expect(page.locator(selectors.chaptersTab)).toBeVisible()
     })
 
     test('should be responsive on tablet', async ({ page }) => {
@@ -289,7 +251,6 @@ test.describe('Transcribe Page', () => {
       await expect(page.locator(selectors.videoPlayer)).toBeVisible()
       await expect(page.locator(selectors.transcriptViewer)).toBeVisible()
       await expect(page.locator(selectors.summaryTab)).toBeVisible()
-      await expect(page.locator(selectors.chaptersTab)).toBeVisible()
     })
   })
 })

@@ -22,7 +22,6 @@ import { optimizedQueries } from '@/lib/db-optimization'
 import type {
   VideoData,
   TranscriptSegment,
-  VideoChapter,
   KeyPointRich,
 } from '@/lib/transcript'
 
@@ -122,7 +121,7 @@ export async function GET(
       thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
       transcript: convertUtterancesToSegments(transcript.utterances),
       summary: transcript.summary || 'No summary available',
-      chapters: convertChaptersToVideoChapters(transcript.chapters),
+      chapters: [], // Chapters functionality removed from UI
       metadata: {
         language: transcript.language || 'en',
         generatedAt: transcript.createdAt || new Date(),
@@ -176,27 +175,7 @@ function convertUtterancesToSegments(utterances: unknown): TranscriptSegment[] {
   })
 }
 
-/**
- * Convert database chapters to frontend video chapters
- */
-function convertChaptersToVideoChapters(chapters: unknown): VideoChapter[] {
-  if (!chapters || !Array.isArray(chapters)) {
-    return []
-  }
 
-  return chapters.map((chapter: unknown) => {
-    const c = chapter as Record<string, unknown>
-    return {
-      id:
-        (c.id as string) ||
-        `chapter-${Math.random().toString(36).substr(2, 9)}`,
-      title: (c.title as string) || 'Untitled Chapter',
-      start: (c.start as number) || 0,
-      end: (c.end as number) || 0,
-      description: (c.description as string) || '',
-    }
-  })
-}
 
 /**
  * OPTIONS handler for CORS
